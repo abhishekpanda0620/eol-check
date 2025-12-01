@@ -1,3 +1,5 @@
+import { Cache } from './cache';
+
 export interface EolCycle {
   cycle: string;
   releaseDate: string;
@@ -10,8 +12,21 @@ export interface EolCycle {
 }
 
 const BASE_URL = 'https://endoflife.date/api';
+const cache = new Cache();
 
-export const fetchEolData = async (product: string): Promise<EolCycle[]> => {
+export const fetchEolData = async (
+  product: string,
+  forceRefresh = false,
+): Promise<EolCycle[]> => {
+  // Check cache first (unless force refresh is requested)
+  if (!forceRefresh) {
+    const cached = cache.get(product);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  // Fetch from API
   try {
     const response = await fetch(`${BASE_URL}/${product}.json`);
     if (!response.ok) {
@@ -20,6 +35,10 @@ export const fetchEolData = async (product: string): Promise<EolCycle[]> => {
       );
     }
     const data = (await response.json()) as EolCycle[];
+
+    // Save to cache
+    cache.set(product, data);
+
     return data;
   } catch (error) {
     console.error(`Error fetching EOL data for ${product}:`, error);

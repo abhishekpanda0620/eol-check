@@ -11,7 +11,8 @@ program
   .description('Check EOL status of your environment')
   .version('1.0.0')
   .option('--json', 'Output results as JSON')
-  .option('--verbose', 'Show verbose output');
+  .option('--verbose', 'Show verbose output')
+  .option('--refresh-cache', 'Force refresh cache from API');
 
 program.parse(process.argv);
 const options = program.opts();
@@ -28,7 +29,7 @@ async function main() {
   if (scanResult.nodeVersion) {
     if (options.verbose)
       console.log(`Checking Node.js ${scanResult.nodeVersion}...`);
-    const nodeData = await fetchEolData('nodejs');
+    const nodeData = await fetchEolData('nodejs', options.refreshCache);
     results.push(evaluateVersion('Node.js', scanResult.nodeVersion, nodeData));
   }
 
@@ -46,7 +47,7 @@ async function main() {
     if (product) {
       if (options.verbose)
         console.log(`Checking OS ${scanResult.os} (mapped to ${product})...`);
-      const osData = await fetchEolData(product);
+      const osData = await fetchEolData(product, options.refreshCache);
       // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
       const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
       if (versionMatch) {
