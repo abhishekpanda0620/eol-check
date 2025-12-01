@@ -29,7 +29,7 @@ export const scanEnvironment = (): ScanResult => {
         os = nameLine.split('=')[1].replace(/"/g, '');
       }
     } else {
-        os = process.platform;
+      os = process.platform;
     }
   } catch (error) {
     console.warn('Failed to detect OS details', error);

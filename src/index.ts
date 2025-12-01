@@ -11,4 +11,3 @@ fetchEolData('nodejs').then((data) => {
   const evaluation = evaluateVersion('Node.js', result.nodeVersion, data);
   console.log('Evaluation Result:', evaluation);
 });
-

@@ -22,7 +22,9 @@ export const evaluateVersion = (
   const majorVersion = version.split('.')[0];
 
   // Try to find exact match (e.g. for Ubuntu 22.04) or major version match (e.g. Node 18)
-  const cycleData = eolData.find((c) => c.cycle === version || c.cycle === majorVersion);
+  const cycleData = eolData.find(
+    (c) => c.cycle === version || c.cycle === majorVersion,
+  );
 
   if (!cycleData) {
     return {
@@ -34,10 +36,11 @@ export const evaluateVersion = (
   }
 
   const now = new Date();
-  const eolDate = cycleData.eol === true ? null : new Date(cycleData.eol as string);
+  const eolDate =
+    cycleData.eol === true ? null : new Date(cycleData.eol as string);
 
   if (typeof cycleData.eol === 'boolean' && cycleData.eol) {
-     return {
+    return {
       component,
       version: currentVersion,
       status: Status.ERR,

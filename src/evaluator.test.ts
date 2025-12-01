@@ -42,7 +42,7 @@ describe('evaluator', () => {
       lts: true,
       support: '2024-04-01',
       discontinued: false,
-    }
+    },
   ];
 
   it('should return OK for supported version', () => {

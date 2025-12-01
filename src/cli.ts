@@ -26,31 +26,33 @@ async function main() {
 
   // Check Node.js
   if (scanResult.nodeVersion) {
-    if (options.verbose) console.log(`Checking Node.js ${scanResult.nodeVersion}...`);
+    if (options.verbose)
+      console.log(`Checking Node.js ${scanResult.nodeVersion}...`);
     const nodeData = await fetchEolData('nodejs');
     results.push(evaluateVersion('Node.js', scanResult.nodeVersion, nodeData));
   }
 
   // Check OS (if detected)
   if (scanResult.os && scanResult.os !== 'Unknown') {
-     // Note: OS matching is tricky with endoflife.date as they have specific slugs like 'ubuntu', 'alpine'.
-     // For now, we'll try to map common ones or skip if unsure.
-     // This is a simplified implementation for the prototype.
-     const osLower = scanResult.os.toLowerCase();
-     let product = '';
-     if (osLower.includes('ubuntu')) product = 'ubuntu';
-     else if (osLower.includes('alpine')) product = 'alpine';
-     else if (osLower.includes('debian')) product = 'debian';
+    // Note: OS matching is tricky with endoflife.date as they have specific slugs like 'ubuntu', 'alpine'.
+    // For now, we'll try to map common ones or skip if unsure.
+    // This is a simplified implementation for the prototype.
+    const osLower = scanResult.os.toLowerCase();
+    let product = '';
+    if (osLower.includes('ubuntu')) product = 'ubuntu';
+    else if (osLower.includes('alpine')) product = 'alpine';
+    else if (osLower.includes('debian')) product = 'debian';
 
-     if (product) {
-        if (options.verbose) console.log(`Checking OS ${scanResult.os} (mapped to ${product})...`);
-        const osData = await fetchEolData(product);
-        // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
-        const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
-        if (versionMatch) {
-            results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
-        }
-     }
+    if (product) {
+      if (options.verbose)
+        console.log(`Checking OS ${scanResult.os} (mapped to ${product})...`);
+      const osData = await fetchEolData(product);
+      // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
+      const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
+      if (versionMatch) {
+        results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+      }
+    }
   }
 
   if (options.json) {

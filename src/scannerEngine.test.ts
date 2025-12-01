@@ -36,8 +36,10 @@ describe('scannerEngine', () => {
     (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
       return path === '/etc/os-release';
     });
-    (fs.readFileSync as jest.Mock).mockReturnValue('PRETTY_NAME="Ubuntu 22.04.5 LTS"\nNAME="Ubuntu"');
-    
+    (fs.readFileSync as jest.Mock).mockReturnValue(
+      'PRETTY_NAME="Ubuntu 22.04.5 LTS"\nNAME="Ubuntu"',
+    );
+
     const result = scanEnvironment();
     expect(result.os).toBe('Ubuntu 22.04.5 LTS');
   });
