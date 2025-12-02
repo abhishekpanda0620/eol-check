@@ -1,7 +1,7 @@
 {
   "name": "eol-check",
-  "version": "1.0.0",
-  "description": "CLI tool to check End-of-Life (EOL) status of Node.js, package managers, and operating systems",
+  "version": "1.1.1",
+  "description": "CLI tool to check End-of-Life (EOL) status of Node.js, package managers, and operating systems and dependencies",
   "main": "index.js",
   "bin": {
     "eol-check": "dist/cli.js"
@@ -13,9 +13,18 @@
     "test": "jest",
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "precheck": "npm run build",
+    "check": "node dist/cli.js",
+    "check:version": "node dist/cli.js -V"
   },
-  "keywords": ["eol", "end-of-life", "cli", "version-check", "security"],
+  "keywords": [
+    "eol",
+    "end-of-life",
+    "cli",
+    "version-check",
+    "security"
+  ],
   "author": "Abhishek Panda <abhishekpanda0620@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -43,6 +52,8 @@
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "commander": "^14.0.2"
+    "commander": "^14.0.2",
+    "eol-check": "^1.1.0",
+    "react": "^19.2.0"
   }
 }

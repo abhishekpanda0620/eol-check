@@ -13,47 +13,63 @@ export interface EvaluationResult {
   message: string;
 }
 
-export const evaluateVersion = (
+export function evaluateVersion(
   component: string,
-  currentVersion: string,
+  rawVersion: string,
   eolData: EolCycle[],
-): EvaluationResult => {
-  const version = currentVersion.replace(/^v/, '');
-  const majorVersion = version.split('.')[0];
+): EvaluationResult {
+  const version = rawVersion.replace(/^v/, '');
+  
+  // Debug log
+  // console.log(`Evaluating ${component} version ${version}`);
 
-  // Try to find exact match (e.g. for Ubuntu 22.04) or major version match (e.g. Node 18)
-  const cycleData = eolData.find(
-    (c) => c.cycle === version || c.cycle === majorVersion,
-  );
+  // 1. Try exact match
+  let cycle = eolData.find((c) => c.cycle === version);
 
-  if (!cycleData) {
+  // 2. Try matching major.minor (e.g. "4.2.0" -> "4.2")
+  if (!cycle) {
+    const parts = version.split('.');
+    if (parts.length >= 2) {
+      const majorMinor = `${parts[0]}.${parts[1]}`;
+      cycle = eolData.find((c) => c.cycle === majorMinor);
+    }
+  }
+
+  // 3. Try matching major version (e.g. "18.14.0" -> "18")
+  if (!cycle) {
+    const major = version.split('.')[0];
+    cycle = eolData.find((c) => c.cycle === major);
+  }
+
+  if (!cycle) {
     return {
       component,
-      version: currentVersion,
+      version,
       status: Status.WARN,
-      message: `Could not find EOL data for version ${majorVersion}`,
+      message: `Could not find EOL data for version ${version}`,
     };
   }
 
   const now = new Date();
   const eolDate =
-    cycleData.eol === true ? null : new Date(cycleData.eol as string);
+    typeof cycle.eol === 'string' ? new Date(cycle.eol) : null;
+  const isEolBoolean = typeof cycle.eol === 'boolean' && cycle.eol === true;
 
-  if (typeof cycleData.eol === 'boolean' && cycleData.eol) {
+  if (isEolBoolean) {
     return {
       component,
-      version: currentVersion,
+      version,
       status: Status.ERR,
-      message: `Version ${majorVersion} is EOL`,
+      message: `Version ${cycle.cycle} is EOL`,
     };
   }
 
   if (eolDate && now > eolDate) {
     return {
       component,
-      version: currentVersion,
+      version,
       status: Status.ERR,
-      message: `Version ${majorVersion} is EOL (ended ${cycleData.eol})`,
+      message: `Version ${cycle.cycle} is EOL (ended ${cycle.eol})`,
     };
   }
 
@@ -65,17 +81,17 @@ export const evaluateVersion = (
     if (monthsUntilEol <= 6) {
       return {
         component,
-        version: currentVersion,
+        version,
         status: Status.WARN,
-        message: `Version ${majorVersion} is approaching EOL (ends ${cycleData.eol})`,
+        message: `Version ${cycle.cycle} is approaching EOL (ends ${cycle.eol})`,
       };
     }
   }
 
   return {
     component,
-    version: currentVersion,
+    version,
     status: Status.OK,
-    message: `Version ${majorVersion} is supported (ends ${cycleData.eol || 'unknown'})`,
+    message: `Version ${cycle.cycle} is supported (ends ${cycle.eol || 'unknown'})`,
   };
-};
+}

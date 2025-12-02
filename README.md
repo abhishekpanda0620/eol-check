@@ -16,33 +16,36 @@ A CLI tool to check the End-Of-Life (EOL) status of your development environment
 
 ## Installation
 
-### From npm (Global)
-
-Once published, you can install it globally:
+### Global Installation
 
 ```bash
 npm install -g eol-check
 ```
 
-### From Source (Local Development)
+### Local/Project Installation
 
-1.  Clone the repository.
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Build the project:
-    ```bash
-    npm run build
-    ```
-4.  Link the package globally:
-    ```bash
-    npm link
-    ```
+```bash
+npm install --save-dev eol-check
+```
+
+When installed locally, use the provided npm scripts to avoid conflicts with global installations:
+
+```bash
+# Check version
+npm run check:version
+
+# Run EOL check
+npm run check
+
+# Run with options (use -- to pass arguments)
+npm run check -- --verbose
+npm run check -- --json
+npm run check -- --refresh-cache
+```
 
 ## Usage
 
-Run the tool in any directory:
+Run the tool in any project directory:
 
 ```bash
 eol-check
@@ -50,9 +53,20 @@ eol-check
 
 ### Options
 
--   `--json`: Output results in JSON format (useful for CI/CD pipelines).
--   `--verbose`: Show verbose logging during the scan.
--   `--help`: Show help information.
+- `--json`: Output results in JSON format (great for CI pipelines).
+- `--verbose`: Show detailed logs of what is being scanned.
+- `--refresh-cache`: Force refresh of cached EOL data.
+- `--help`: Show help information.
+
+## Supported Scanners
+
+| Language | File | Supported Frameworks/Tools |
+|----------|------|----------------------------|
+| Node.js | `package.json` | React, Vue, Angular, Next.js, Nuxt, NestJS, Ember, Svelte, TypeScript, jQuery, Bootstrap, TailwindCSS, Electron |
+| PHP | `composer.json` | Laravel, Symfony, Drupal, Magento, Typo3, PHP |
+| Python | `requirements.txt` | Django, Flask, Python, Ansible, Kubernetes |
+| Go | `go.mod` | Go, Gin, Fiber |
+| Ruby | `Gemfile` | Ruby, Rails, Jekyll |
 
 ### Example Output
 
