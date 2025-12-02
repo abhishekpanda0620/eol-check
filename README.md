@@ -16,10 +16,31 @@ A CLI tool to check the End-Of-Life (EOL) status of your development environment
 
 ## Installation
 
-### From npm (Global)
+### Global Installation
 
 ```bash
 npm install -g eol-check
+```
+
+### Local/Project Installation
+
+```bash
+npm install --save-dev eol-check
+```
+
+When installed locally, use the provided npm scripts to avoid conflicts with global installations:
+
+```bash
+# Check version
+npm run check:version
+
+# Run EOL check
+npm run check
+
+# Run with options (use -- to pass arguments)
+npm run check -- --verbose
+npm run check -- --json
+npm run check -- --refresh-cache
 ```
 
 ## Usage
