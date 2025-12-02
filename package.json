@@ -41,6 +41,7 @@
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
+    "eol-check": "^1.2.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -52,7 +53,6 @@
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "commander": "^14.0.2",
-    "eol-check": "^1.1.0"
+    "commander": "^14.0.2"
   }
 }
