@@ -1,7 +1,7 @@
 {
   "name": "eol-check",
   "version": "1.0.0",
-  "description": "CLI tool to check End-of-Life (EOL) status of Node.js, package managers, and operating systems",
+  "description": "CLI tool to check End-of-Life (EOL) status of Node.js, package managers, and operating systems and dependencies",
   "main": "index.js",
   "bin": {
     "eol-check": "dist/cli.js"

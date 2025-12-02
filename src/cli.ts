@@ -3,6 +3,8 @@ import chalk from 'chalk';
 import { scanEnvironment } from './scannerEngine';
 import { fetchEolData } from './endoflifeApi';
 import { evaluateVersion, Status } from './evaluator';
+import { scanDependencies, cleanVersion } from './dependencyScanner';
+import { mapPackageToProduct } from './productMapper';
 
 const program = new Command();
 
@@ -52,6 +54,25 @@ async function main() {
       const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
       if (versionMatch) {
         results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+      }
+    }
+  }
+
+  // Check Project Dependencies
+  if (options.verbose) console.log('Scanning project dependencies...');
+  const dependencies = scanDependencies(process.cwd());
+
+  for (const dep of dependencies) {
+    const productSlug = mapPackageToProduct(dep.name);
+    if (productSlug) {
+      if (options.verbose)
+        console.log(`Checking dependency ${dep.name} (${dep.version})...`);
+
+      const cleanVer = cleanVersion(dep.version);
+      const eolData = await fetchEolData(productSlug, options.refreshCache);
+
+      if (eolData && eolData.length > 0) {
+        results.push(evaluateVersion(dep.name, cleanVer, eolData));
       }
     }
   }
