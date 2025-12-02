@@ -11,6 +11,7 @@ A CLI tool to check the End-Of-Life (EOL) status of your development environment
 ## Features
 
 -   **Automated Detection**: Detects Node.js version, package manager (npm/yarn/pnpm), and OS (Ubuntu/Alpine/Debian).
+-   **System Service Scanning**: Detects and checks EOL status of local system services (Redis, PostgreSQL, Docker, etc.).
 -   **Real-time Data**: Fetches the latest EOL data from [endoflife.date](https://endoflife.date).
 -   **Actionable Feedback**: clearly indicates if a component is supported, approaching EOL, or EOL.
 
@@ -70,6 +71,7 @@ eol-check
 | Ruby | `Gemfile` | Ruby, Rails, Jekyll, Bundler |
 | Databases | Various | PostgreSQL, MySQL, MongoDB, Redis, MariaDB, Elasticsearch, Memcached, Cassandra, Neo4j, SQLite, CouchDB |
 | Build Tools | Various | Gradle, Maven, Ant, Bazel, Grunt |
+| System Services | Binary Check | Redis, PostgreSQL, MySQL, MongoDB, Docker, Git, Python, Java, Go |
 
 ### Example Output
 
