@@ -5,14 +5,16 @@ import { fetchEolData } from './endoflifeApi';
 import { evaluateVersion, Status } from './evaluator';
 import { scanDependencies, cleanVersion } from './dependencyScanner';
 import { mapPackageToProduct } from './productMapper';
+import { generateHtmlReport } from './htmlReporter';
 
 const program = new Command();
 
 program
   .name('eol-check')
   .description('Check EOL status of your environment')
-  .version('1.1.1')
+  .version('1.2.0')
   .option('--json', 'Output results as JSON')
+  .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--verbose', 'Show verbose output')
   .option('--refresh-cache', 'Force refresh cache from API');
 
@@ -74,6 +76,16 @@ async function main() {
       if (eolData && eolData.length > 0) {
         results.push(evaluateVersion(dep.name, cleanVer, eolData));
       }
+    }
+  }
+
+  // Generate HTML report if requested
+  if (options.html) {
+    try {
+      generateHtmlReport(results, options.html);
+      console.log(chalk.green(`\n✓ HTML report generated: ${options.html}`));
+    } catch (error) {
+      console.error(chalk.red(`Failed to generate HTML report: ${error}`));
     }
   }
 

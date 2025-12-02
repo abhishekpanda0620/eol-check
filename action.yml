@@ -1,0 +1,40 @@
+name: 'EOL Check'
+description: 'Check End-of-Life (EOL) status of your dependencies and environment'
+author: 'Abhishek Panda'
+branding:
+  icon: 'alert-circle'
+  color: 'purple'
+
+inputs:
+  fail-on-eol:
+    description: 'Exit with error code if EOL components are found'
+    required: false
+    default: 'true'
+  generate-html:
+    description: 'Generate HTML report as artifact'
+    required: false
+    default: 'false'
+  html-filename:
+    description: 'Filename for HTML report (only used if generate-html is true)'
+    required: false
+    default: 'eol-report.html'
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+  working-directory:
+    description: 'Working directory to run eol-check in'
+    required: false
+    default: '.'
+
+outputs:
+  results:
+    description: 'JSON results of the EOL check'
+  has-eol:
+    description: 'Boolean indicating if EOL components were found'
+  summary:
+    description: 'Summary statistics (total, ok, warn, err counts)'
+
+runs:
+  using: 'node20'
+  main: 'dist/actionWrapper.js'

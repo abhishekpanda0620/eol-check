@@ -54,6 +54,7 @@ eol-check
 ### Options
 
 - `--json`: Output results in JSON format (great for CI pipelines).
+- `--html <filename>`: Generate a beautiful HTML report with visualizations.
 - `--verbose`: Show detailed logs of what is being scanned.
 - `--refresh-cache`: Force refresh of cached EOL data.
 - `--help`: Show help information.
@@ -61,12 +62,14 @@ eol-check
 ## Supported Scanners
 
 | Language | File | Supported Frameworks/Tools |
-|----------|------|----------------------------|
-| Node.js | `package.json` | React, Vue, Angular, Next.js, Nuxt, NestJS, Ember, Svelte, TypeScript, jQuery, Bootstrap, TailwindCSS, Electron |
+|----------|------|-------------------------------|
+| Node.js | `package.json` | React, Vue, Angular, Next.js, Nuxt, NestJS, Ember, Svelte, TypeScript, jQuery, Bootstrap, TailwindCSS, Electron, Jest, Mocha, Cypress, Playwright, Webpack, Vite, Rollup, ESLint |
 | PHP | `composer.json` | Laravel, Symfony, Drupal, Magento, Typo3, PHP |
-| Python | `requirements.txt` | Django, Flask, Python, Ansible, Kubernetes |
+| Python | `requirements.txt` | Django, Flask, Python, Ansible, Kubernetes, Pytest |
 | Go | `go.mod` | Go, Gin, Fiber |
-| Ruby | `Gemfile` | Ruby, Rails, Jekyll |
+| Ruby | `Gemfile` | Ruby, Rails, Jekyll, Bundler |
+| Databases | Various | PostgreSQL, MySQL, MongoDB, Redis, MariaDB, Elasticsearch, Memcached, Cassandra, Neo4j, SQLite, CouchDB |
+| Build Tools | Various | Gradle, Maven, Ant, Bazel, Grunt |
 
 ### Example Output
 
@@ -77,6 +80,45 @@ EOL Check Results:
 [OK] Node.js v18.16.0 - Version 18 is supported (ends 2025-04-30)
 [WARN] Ubuntu 20.04 - Version 20 is approaching EOL (ends 2025-04-02)
 ```
+
+## HTML Reports
+
+Generate beautiful, shareable HTML reports with visualizations:
+
+```bash
+eol-check --html report.html
+```
+
+Features:
+- 📊 Summary statistics dashboard
+- 🎨 Color-coded severity indicators  
+- 📱 Responsive design (mobile-friendly)
+- 📤 Exportable standalone HTML (no external dependencies)
+- 🖨️ Print-friendly styling
+
+## GitHub Action
+
+Automate EOL checks in your CI/CD pipeline:
+
+```yaml
+name: EOL Check
+on: [push, pull_request]
+
+jobs:
+  eol-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: abhishekpanda0620/eol-check@v1
+        with:
+          generate-html: true
+```
+
+**See [GitHub Action Documentation](.github/ACTION-README.md) for:**
+- HTML report artifacts
+- Configuration options
+- Advanced usage examples
+- Monorepo support
 
 ## CI/CD Integration
 

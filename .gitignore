@@ -26,3 +26,10 @@ yarn-error.log*
 # Environment files
 .env
 .env.local
+
+# Generated HTML reports
+*.html
+!docs/**/*.html
+
+# Cache
+.eol-check/
