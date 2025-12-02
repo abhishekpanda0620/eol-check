@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { scanEnvironment } from './scannerEngine';
-import { fetchEolData } from './endoflifeApi';
-import { evaluateVersion, Status } from './evaluator';
-import { scanDependencies, cleanVersion } from './dependencyScanner';
-import { mapPackageToProduct } from './productMapper';
-import { generateHtmlReport } from './htmlReporter';
+import { scanEnvironment } from './scanners/scannerEngine';
+import { fetchEolData } from './core/endoflifeApi';
+import { evaluateVersion, Status } from './core/evaluator';
+import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
+import { mapPackageToProduct } from './core/productMapper';
+import { generateHtmlReport } from './reporters/htmlReporter';
 
 const program = new Command();
 
@@ -57,6 +57,22 @@ async function main() {
       const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
       if (versionMatch) {
         results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+      }
+    }
+  }
+
+  // Check System Services
+  if (scanResult.services.length > 0) {
+    if (options.verbose) console.log('Checking system services...');
+    for (const service of scanResult.services) {
+      if (options.verbose)
+        console.log(
+          `Checking service ${service.name} (${service.version})...`,
+        );
+      
+      const eolData = await fetchEolData(service.product, options.refreshCache);
+      if (eolData && eolData.length > 0) {
+        results.push(evaluateVersion(service.name, service.version, eolData));
       }
     }
   }

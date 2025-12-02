@@ -1,6 +1,6 @@
-import { fetchEolData } from './endoflifeApi';
-import { scanEnvironment } from './scannerEngine';
-import { evaluateVersion } from './evaluator';
+import { fetchEolData } from './core/endoflifeApi';
+import { scanEnvironment } from './scanners/scannerEngine';
+import { evaluateVersion } from './core/evaluator';
 
 console.log('Scanning environment...');
 const result = scanEnvironment();
