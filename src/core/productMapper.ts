@@ -27,7 +27,6 @@ export const PRODUCT_MAP: Record<string, string> = {
   'bun': 'bun',
   
   // NPM - Testing Frameworks
-  'jest': 'jest',
   'mocha': 'mocha',
   'cypress': 'cypress',
   'playwright': 'playwright',
