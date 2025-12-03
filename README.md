@@ -29,19 +29,24 @@ npm install -g eol-check
 npm install --save-dev eol-check
 ```
 
-When installed locally, use the provided npm scripts to avoid conflicts with global installations:
-
+**Option 1: Run with npx (Recommended)**
 ```bash
-# Check version
-npm run check:version
+npx eol-check
+```
 
-# Run EOL check
+**Option 2: Add to package.json**
+Add the following to your `package.json` scripts:
+```json
+{
+  "scripts": {
+    "check": "eol-check"
+  }
+}
+```
+
+Then you can run:
+```bash
 npm run check
-
-# Run with options (use -- to pass arguments)
-npm run check -- --verbose
-npm run check -- --json
-npm run check -- --refresh-cache
 ```
 
 ## Usage
