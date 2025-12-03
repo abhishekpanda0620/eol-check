@@ -1,6 +1,6 @@
 # eol-check
 
-[![npm version](https://badge.fury.io/js/eol-check.svg)](https://www.npmjs.com/package/eol-check)
+[![npm version](https://img.shields.io/npm/v/eol-check.svg)](https://www.npmjs.com/package/eol-check)
 [![CI](https://github.com/abhishekpanda0620/eol-check/actions/workflows/ci.yml/badge.svg)](https://github.com/abhishekpanda0620/eol-check/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/abhishekpanda0620/eol-check/branch/main/graph/badge.svg)](https://codecov.io/gh/abhishekpanda0620/eol-check)
@@ -11,6 +11,7 @@ A CLI tool to check the End-Of-Life (EOL) status of your development environment
 ## Features
 
 -   **Automated Detection**: Detects Node.js version, package manager (npm/yarn/pnpm), and OS (Ubuntu/Alpine/Debian).
+-   **System Service Scanning**: Detects and checks EOL status of local system services (Redis, PostgreSQL, Docker, etc.).
 -   **Real-time Data**: Fetches the latest EOL data from [endoflife.date](https://endoflife.date).
 -   **Actionable Feedback**: clearly indicates if a component is supported, approaching EOL, or EOL.
 
@@ -70,6 +71,7 @@ eol-check
 | Ruby | `Gemfile` | Ruby, Rails, Jekyll, Bundler |
 | Databases | Various | PostgreSQL, MySQL, MongoDB, Redis, MariaDB, Elasticsearch, Memcached, Cassandra, Neo4j, SQLite, CouchDB |
 | Build Tools | Various | Gradle, Maven, Ant, Bazel, Grunt |
+| System Services | Binary Check | Redis, PostgreSQL, MySQL, MongoDB, Docker, Git, Python, Java, Go |
 
 ### Example Output
 
@@ -109,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: abhishekpanda0620/eol-check@v1
+      - uses: abhishekpanda0620/eol-check@v1.3.2
         with:
           generate-html: true
 ```

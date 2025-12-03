@@ -1,22 +1,25 @@
+#!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { scanEnvironment } from './scannerEngine';
-import { fetchEolData } from './endoflifeApi';
-import { evaluateVersion, Status } from './evaluator';
-import { scanDependencies, cleanVersion } from './dependencyScanner';
-import { mapPackageToProduct } from './productMapper';
-import { generateHtmlReport } from './htmlReporter';
+import { scanEnvironment } from './scanners/scannerEngine';
+import { fetchEolData } from './core/endoflifeApi';
+import { evaluateVersion, Status } from './core/evaluator';
+import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
+import { mapPackageToProduct } from './core/productMapper';
+import { generateHtmlReport } from './reporters/htmlReporter';
 
 const program = new Command();
 
 program
   .name('eol-check')
-  .description('Check EOL status of your environment')
-  .version('1.2.0')
+  .description('Check End of Life (EOL) status of your development environment and project dependencies')
+  .version('1.3.2')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--verbose', 'Show verbose output')
-  .option('--refresh-cache', 'Force refresh cache from API');
+  .option('--refresh-cache', 'Force refresh cache from API')
+  .option('--version', 'Show version number')
+  .option('--help', 'Show help information');
 
 program.parse(process.argv);
 const options = program.opts();
@@ -51,11 +54,48 @@ async function main() {
     if (product) {
       if (options.verbose)
         console.log(`Checking OS ${scanResult.os} (mapped to ${product})...`);
-      const osData = await fetchEolData(product, options.refreshCache);
-      // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
-      const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
-      if (versionMatch) {
-        results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+      
+      try {
+        const osData = await fetchEolData(product, options.refreshCache);
+        // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
+        const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
+        if (versionMatch) {
+          results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+        }
+      } catch (error) {
+        if (options.verbose) {
+          console.warn(
+            chalk.yellow(
+              `Warning: Could not fetch EOL data for OS ${scanResult.os}: ${error}`,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // Check System Services
+  if (scanResult.services.length > 0) {
+    if (options.verbose) console.log('Checking system services...');
+    for (const service of scanResult.services) {
+      if (options.verbose)
+        console.log(
+          `Checking service ${service.name} (${service.version})...`,
+        );
+      
+      try {
+        const eolData = await fetchEolData(service.product, options.refreshCache);
+        if (eolData && eolData.length > 0) {
+          results.push(evaluateVersion(service.name, service.version, eolData));
+        }
+      } catch (error) {
+        if (options.verbose) {
+          console.warn(
+            chalk.yellow(
+              `Warning: Could not fetch EOL data for ${service.name} (${service.product}): ${error}`,
+            ),
+          );
+        }
       }
     }
   }
@@ -63,18 +103,32 @@ async function main() {
   // Check Project Dependencies
   if (options.verbose) console.log('Scanning project dependencies...');
   const dependencies = scanDependencies(process.cwd());
-
   for (const dep of dependencies) {
-    const productSlug = mapPackageToProduct(dep.name);
-    if (productSlug) {
+    const product = mapPackageToProduct(dep.name);
+    if (product) {
       if (options.verbose)
-        console.log(`Checking dependency ${dep.name} (${dep.version})...`);
-
-      const cleanVer = cleanVersion(dep.version);
-      const eolData = await fetchEolData(productSlug, options.refreshCache);
-
-      if (eolData && eolData.length > 0) {
-        results.push(evaluateVersion(dep.name, cleanVer, eolData));
+        console.log(`Checking dependency ${dep.name} (mapped to ${product})...`);
+      
+      try {
+        const eolData = await fetchEolData(product, options.refreshCache);
+        if (eolData && eolData.length > 0) {
+          const version = cleanVersion(dep.version);
+          results.push(evaluateVersion(dep.name, version, eolData));
+        }
+      } catch (error) {
+        if (options.verbose) {
+          console.warn(
+            chalk.yellow(
+              `Warning: Could not fetch EOL data for ${dep.name}: ${error}`,
+            ),
+          );
+        } else {
+             console.warn(
+            chalk.yellow(
+              `Warning: Could not fetch EOL data for ${dep.name} (mapped to ${product}). Skipping...`,
+            ),
+          );
+        }
       }
     }
   }

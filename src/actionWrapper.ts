@@ -1,9 +1,9 @@
-import { scanEnvironment } from './scannerEngine';
-import { fetchEolData } from './endoflifeApi';
-import { evaluateVersion, Status } from './evaluator';
-import { scanDependencies, cleanVersion } from './dependencyScanner';
-import { mapPackageToProduct } from './productMapper';
-import { generateHtmlReport } from './htmlReporter';
+import { scanEnvironment } from './scanners/scannerEngine';
+import { fetchEolData } from './core/endoflifeApi';
+import { evaluateVersion, Status } from './core/evaluator';
+import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
+import { mapPackageToProduct } from './core/productMapper';
+import { generateHtmlReport } from './reporters/htmlReporter';
 import * as fs from 'fs';
 
 // GitHub Actions helper functions

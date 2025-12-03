@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { scanLocalServices, DetectedService } from './serviceScanner';
 
 export interface ScanResult {
   nodeVersion: string;
   packageManager: string;
   os: string;
+  services: DetectedService[];
 }
 
 export const scanEnvironment = (): ScanResult => {
@@ -36,9 +38,13 @@ export const scanEnvironment = (): ScanResult => {
     os = process.platform;
   }
 
+  // Scan local services
+  const services = scanLocalServices();
+
   return {
     nodeVersion,
     packageManager,
     os,
+    services,
   };
 };

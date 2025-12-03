@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { EvaluationResult, Status } from './evaluator';
+import { EvaluationResult, Status } from '../core/evaluator';
 
 export interface HtmlReportOptions {
   title?: string;

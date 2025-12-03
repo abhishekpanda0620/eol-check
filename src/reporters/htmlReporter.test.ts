@@ -1,5 +1,5 @@
 import { generateHtmlReport } from './htmlReporter';
-import { Status, EvaluationResult } from './evaluator';
+import { Status, EvaluationResult } from '../core/evaluator';
 import * as fs from 'fs';
 import * as path from 'path';
 
