@@ -14,7 +14,7 @@ describe('Product Mapper', () => {
       expect(mapPackageToProduct('random-lib-12345')).toBeNull();
     });
 
-    // NEW: Database mappings
+    // Database mappings
     describe('Database products', () => {
       it('should map PostgreSQL packages correctly', () => {
         expect(mapPackageToProduct('postgresql')).toBe('postgresql');
@@ -49,37 +49,12 @@ describe('Product Mapper', () => {
       });
     });
 
-    // NEW: Testing framework mappings
-    describe('Testing framework products', () => {
-      it('should map testing frameworks correctly', () => {
-        expect(mapPackageToProduct('jest')).toBe('jest');
-        expect(mapPackageToProduct('mocha')).toBe('mocha');
-        expect(mapPackageToProduct('cypress')).toBe('cypress');
-        expect(mapPackageToProduct('playwright')).toBe('playwright');
-        expect(mapPackageToProduct('@playwright/test')).toBe('playwright');
-        expect(mapPackageToProduct('jasmine')).toBe('jasmine');
-        expect(mapPackageToProduct('jasmine-core')).toBe('jasmine');
-        expect(mapPackageToProduct('karma')).toBe('karma');
-        expect(mapPackageToProduct('ava')).toBe('ava');
-        expect(mapPackageToProduct('vitest')).toBe('vitest');
-      });
-    });
-
-    // NEW: Build tools mappings
-    describe('Build tools and bundlers', () => {
+    // Build tools mappings
+    describe('Build tools and linters', () => {
       it('should map build tools correctly', () => {
-        expect(mapPackageToProduct('webpack')).toBe('webpack');
-        expect(mapPackageToProduct('vite')).toBe('vite');
-        expect(mapPackageToProduct('rollup')).toBe('rollup');
-        expect(mapPackageToProduct('parcel')).toBe('parcel');
-        expect(mapPackageToProduct('parcel-bundler')).toBe('parcel');
-        expect(mapPackageToProduct('esbuild')).toBe('esbuild');
-      });
-
-      it('should map dev tools correctly', () => {
         expect(mapPackageToProduct('eslint')).toBe('eslint');
-        expect(mapPackageToProduct('prettier')).toBe('prettier');
-        expect(mapPackageToProduct('typescript')).toBe('typescript');
+        expect(mapPackageToProduct('protractor')).toBe('protractor');
+        expect(mapPackageToProduct('grunt')).toBe('grunt');
       });
 
       it('should map Java build tools correctly', () => {
@@ -87,11 +62,10 @@ describe('Product Mapper', () => {
         expect(mapPackageToProduct('maven')).toBe('maven');
         expect(mapPackageToProduct('ant')).toBe('ant');
         expect(mapPackageToProduct('bazel')).toBe('bazel');
-        expect(mapPackageToProduct('grunt')).toBe('grunt');
       });
     });
 
-    // NEW: Node.js runtime mapping fix
+    // Node.js runtime mapping
     describe('Runtime mappings', () => {
       it('should map Node.js variations to nodejs', () => {
         expect(mapPackageToProduct('node')).toBe('nodejs');
@@ -99,14 +73,13 @@ describe('Product Mapper', () => {
       });
 
       it('should map package managers correctly', () => {
-        expect(mapPackageToProduct('npm')).toBe('npm');
         expect(mapPackageToProduct('yarn')).toBe('yarn');
         expect(mapPackageToProduct('pnpm')).toBe('pnpm');
         expect(mapPackageToProduct('bun')).toBe('bun');
       });
     });
 
-    // NEW: Container and DevOps
+    // Container and DevOps
     describe('Container and DevOps tools', () => {
       it('should map container tools correctly', () => {
         expect(mapPackageToProduct('docker')).toBe('docker-engine');
@@ -118,7 +91,7 @@ describe('Product Mapper', () => {
     // Comprehensive coverage check
     it('should have mappings for all documented products', () => {
       const productCount = Object.keys(PRODUCT_MAP).length;
-      expect(productCount).toBeGreaterThanOrEqual(90); // We should have 90+ mappings now
+      expect(productCount).toBeGreaterThanOrEqual(55); // We should have 55+ valid mappings
     });
   });
 });

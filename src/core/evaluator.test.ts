@@ -64,7 +64,8 @@ describe('evaluator', () => {
   it('should return WARN if version not found', () => {
     const result = evaluateVersion('Node.js', 'v99.0.0', mockEolData);
     expect(result.status).toBe(Status.WARN);
-    expect(result.message).toContain('Could not find EOL data');
+    expect(result.message).toContain('not found');
+    expect(result.message).toContain('Available versions include');
   });
 
   it('should handle multi-part cycles (Ubuntu 22.04)', () => {

@@ -36,6 +36,12 @@ export async function fetchEolData(
     cache.set(product, response.data);
     return response.data;
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        throw new Error(`Product "${product}" not found on endoflife.date (404)`);
+      }
+      throw new Error(`Failed to fetch EOL data for ${product}: HTTP ${error.response?.status || 'Error'}`);
+    }
     throw new Error(`Failed to fetch EOL data for ${product}: ${error}`);
   }
 }

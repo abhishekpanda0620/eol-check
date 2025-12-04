@@ -3,7 +3,6 @@ export const PRODUCT_MAP: Record<string, string> = {
   'react': 'react',
   'vue': 'vue',
   '@angular/core': 'angular',
-  '@nestjs/core': 'nestjs',
   'next': 'nextjs',
   'nuxt': 'nuxt',
   'ember-source': 'ember',
@@ -12,45 +11,20 @@ export const PRODUCT_MAP: Record<string, string> = {
   'bootstrap': 'bootstrap',
   'tailwindcss': 'tailwindcss',
   'electron': 'electron',
-  'native-base': 'native-base', 
   'react-native': 'react-native',
-  'expo': 'expo',
-  'expo-cli': 'expo',
   'express': 'express',
   
   // NPM - Runtime & Package Managers
   'node': 'nodejs',
   'nodejs': 'nodejs',
-  'npm': 'npm',
   'yarn': 'yarn',
   'pnpm': 'pnpm',
   'bun': 'bun',
   
-  // NPM - Testing Frameworks
-  'jest': 'jest',
-  'mocha': 'mocha',
-  'cypress': 'cypress',
-  'playwright': 'playwright',
-  '@playwright/test': 'playwright',
-  'jasmine': 'jasmine',
-  'jasmine-core': 'jasmine',
-  'karma': 'karma',
-  'protractor': 'protractor',
-  'ava': 'ava',
-  'vitest': 'vitest',
-  
-  // NPM - Build Tools & Bundlers
-  'webpack': 'webpack',
-  'vite': 'vite',
-  'rollup': 'rollup',
-  'parcel': 'parcel',
-  'parcel-bundler': 'parcel',
-  'esbuild': 'esbuild',
-  '@turbo/gen': 'turborepo',
-  'turbo': 'turborepo',
+  // NPM - Build Tools & Linters
   'eslint': 'eslint',
-  'prettier': 'prettier',
-  'typescript': 'typescript',
+  'protractor': 'protractor',
+  'grunt': 'grunt',
   
   // Databases
   'postgresql': 'postgresql',
@@ -84,31 +58,23 @@ export const PRODUCT_MAP: Record<string, string> = {
   
   // Python
   'django': 'django',
-  'flask': 'flask',
   'python': 'python',
   'ansible': 'ansible',
   'kubernetes': 'kubernetes',
   
-  // Python - Testing
-  'pytest': 'pytest',
-
   // Go
   'go': 'go',
-  'github.com/gofiber/fiber': 'fiber',
-  'github.com/gin-gonic/gin': 'gin',
 
   // Ruby
   'ruby': 'ruby',
   'rails': 'rails',
   'jekyll': 'jekyll',
-  'bundler': 'bundler',
   
   // Build Tools (Java, Gradle, Maven, etc.)
   'gradle': 'gradle',
   'maven': 'maven',
   'ant': 'ant',
   'bazel': 'bazel',
-  'grunt': 'grunt',
   
   // Container & DevOps
   'docker': 'docker-engine',
@@ -118,7 +84,6 @@ export const PRODUCT_MAP: Record<string, string> = {
   // Cloud SDKs
   'aws-sdk': 'amazon-eks',
   '@aws-sdk/client-s3': 'amazon-eks',
-  '@azure/storage-blob': 'azuredevops',
   '@google-cloud/storage': 'google-kubernetes-engine',
 };
 

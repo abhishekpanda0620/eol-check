@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
+import open from 'open';
 import { scanEnvironment } from './scanners/scannerEngine';
 import { fetchEolData } from './core/endoflifeApi';
 import { evaluateVersion, Status } from './core/evaluator';
@@ -13,16 +14,62 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.3.2')
+  .version('1.4.0')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
+  .option('--no-browser', 'Do not open HTML report in browser')
   .option('--verbose', 'Show verbose output')
+  .option('--refresh-cache', 'Force refresh cache from API');
+
+program
+  .command('query')
+  .description('Query EOL status for a specific product')
+  .argument('<product>', 'Product name (e.g. nodejs, python, ubuntu)')
+  .argument('[version]', 'Specific version to check')
   .option('--refresh-cache', 'Force refresh cache from API')
-  .option('--version', 'Show version number')
-  .option('--help', 'Show help information');
+  .action(async (product, version, cmdOptions) => {
+    try {
+      const data = await fetchEolData(product, cmdOptions.refreshCache);
+      if (version) {
+        const result = evaluateVersion(product, version, data);
+        let color = chalk.green;
+        if (result.status === Status.WARN) color = chalk.yellow;
+        if (result.status === Status.ERR) color = chalk.red;
+        console.log(
+          `${color(`[${result.status}]`)} ${chalk.bold(result.component)} ${result.version} - ${result.message}`,
+        );
+      } else {
+        console.log(chalk.bold(`EOL Data for ${product}:`));
+        console.table(
+          data.map((release) => ({
+            Cycle: release.cycle,
+            'Release Date': release.releaseDate,
+            'EOL Date': release.eol,
+            'LTS': release.lts,
+          })),
+        );
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('\n✗ Failed to fetch EOL data'));
+      console.error(chalk.yellow(`Product: ${chalk.bold(product)}`));
+      
+      if (errorMsg.includes('404') || errorMsg.includes('Not Found')) {
+        console.error(chalk.gray(`\nThe product "${product}" was not found on endoflife.date.`));
+        console.error(chalk.gray('Please check the product name and try again.'));
+        console.error(chalk.gray(`\nSearch for available products at: ${chalk.cyan('https://endoflife.date/api/all.json')}`));
+      } else {
+        console.error(chalk.gray(`\nError: ${errorMsg}`));
+      }
+    }
+    process.exit(0);
+  });
 
 program.parse(process.argv);
 const options = program.opts();
+
+// If no command was run (i.e., main scan), proceed with main()
+if (!process.argv.slice(2).includes('query')) {
 
 async function main() {
   if (options.verbose) {
@@ -138,6 +185,11 @@ async function main() {
     try {
       generateHtmlReport(results, options.html);
       console.log(chalk.green(`\n✓ HTML report generated: ${options.html}`));
+
+      if (options.browser !== false) {
+        await open(options.html);
+        if (options.verbose) console.log('Opening report in default browser...');
+      }
     } catch (error) {
       console.error(chalk.red(`Failed to generate HTML report: ${error}`));
     }
@@ -168,7 +220,8 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(chalk.red('Error running eol-check:'), err);
-  process.exit(1);
-});
+  main().catch((err) => {
+    console.error(chalk.red('Error running eol-check:'), err);
+    process.exit(1);
+  });
+}

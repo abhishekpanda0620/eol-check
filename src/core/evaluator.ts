@@ -42,11 +42,12 @@ export function evaluateVersion(
   }
 
   if (!cycle) {
+    const availableVersions = eolData.slice(0, 5).map(c => c.cycle).join(', ');
     return {
       component,
       version,
       status: Status.WARN,
-      message: `Could not find EOL data for version ${version}`,
+      message: `Version ${version} not found. Available versions include: ${availableVersions}${eolData.length > 5 ? ', ...' : ''}`,
     };
   }
 
