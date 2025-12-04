@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.4.3')
+  .version('1.5.0')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
@@ -33,6 +33,7 @@ program
 
 program
   .command('query')
+  .alias('q')
   .description('Query EOL status for a specific product')
   .argument('<product>', 'Product name (e.g. nodejs, python, ubuntu)')
   .argument('[version]', 'Specific version to check')

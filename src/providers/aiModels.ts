@@ -53,26 +53,46 @@ export interface DetectedAIModel {
  * Source: https://platform.openai.com/docs/deprecations
  */
 export const OPENAI_MODELS: Record<string, AIModelCycle[]> = {
-  'gpt-3.5-turbo': [
-    { cycle: '0301', releaseDate: '2023-03-01', eol: '2024-06-13', lts: false },
-    { cycle: '0613', releaseDate: '2023-06-13', eol: '2024-09-13', lts: false },
-    { cycle: '16k-0613', releaseDate: '2023-06-13', eol: '2024-09-13', lts: false },
-    { cycle: '1106', releaseDate: '2023-11-06', eol: '2025-11-14', lts: false },
-    { cycle: '0125', releaseDate: '2024-01-25', eol: '2025-11-14', lts: false },
-    { cycle: 'latest', releaseDate: '2024-01-25', eol: false, lts: true },
+  // Frontier Models (Active)
+  'gpt-5.1': [
+    { cycle: 'latest', releaseDate: '2025-11-18', eol: false, lts: true },
   ],
+  'gpt-5-mini': [
+    { cycle: 'latest', releaseDate: '2025-11-18', eol: false, lts: true },
+  ],
+  'gpt-5-nano': [
+    { cycle: 'latest', releaseDate: '2025-11-18', eol: false, lts: true },
+  ],
+  'gpt-5-pro': [
+    { cycle: 'latest', releaseDate: '2025-11-18', eol: false, lts: true },
+  ],
+  'gpt-5': [
+    { cycle: 'latest', releaseDate: '2025-08-07', eol: false, lts: true },
+  ],
+  'gpt-4.1': [
+    { cycle: 'latest', releaseDate: '2025-04-14', eol: false, lts: true },
+  ],
+  
+  // GPT-4 Series
   'gpt-4': [
-    { cycle: '0314', releaseDate: '2023-03-14', eol: '2024-06-13', lts: false },
+    { cycle: '0314', releaseDate: '2023-03-14', eol: '2026-03-26', lts: false },
     { cycle: '0613', releaseDate: '2023-06-13', eol: '2024-06-13', lts: false },
-    { cycle: '32k-0314', releaseDate: '2023-03-14', eol: '2025-06-06', lts: false },
-    { cycle: '32k-0613', releaseDate: '2023-06-13', eol: '2025-06-06', lts: false },
+    { cycle: '1106-preview', releaseDate: '2023-11-06', eol: '2026-03-26', lts: false },
+    { cycle: '0125-preview', releaseDate: '2024-01-25', eol: '2026-03-26', lts: false },
     { cycle: 'turbo-2024-04-09', releaseDate: '2024-04-09', eol: '2025-11-14', lts: false },
     { cycle: 'turbo', releaseDate: '2024-04-09', eol: false, lts: true },
+  ],
+  'gpt-4-32k': [
+    { cycle: '0314', releaseDate: '2023-03-14', eol: '2025-06-06', lts: false },
+    { cycle: '0613', releaseDate: '2023-06-13', eol: '2025-06-06', lts: false },
   ],
   'gpt-4o': [
     { cycle: '2024-05-13', releaseDate: '2024-05-13', eol: false, lts: true },
     { cycle: '2024-08-06', releaseDate: '2024-08-06', eol: false, lts: true },
     { cycle: 'latest', releaseDate: '2024-11-20', eol: false, lts: true },
+  ],
+  'chatgpt-4o-latest': [
+    { cycle: 'latest', releaseDate: '2024-08-06', eol: '2026-02-17', lts: false },
   ],
   'gpt-4o-mini': [
     { cycle: '2024-07-18', releaseDate: '2024-07-18', eol: false, lts: true },
@@ -81,40 +101,68 @@ export const OPENAI_MODELS: Record<string, AIModelCycle[]> = {
   'gpt-4.5-preview': [
     { cycle: 'preview', releaseDate: '2025-02-27', eol: '2025-07-14', lts: false },
   ],
+  
+  // O-Series
   'o1': [
-    { cycle: 'preview', releaseDate: '2024-09-12', eol: '2025-09-12', lts: false },
+    { cycle: 'preview', releaseDate: '2024-09-12', eol: '2025-07-28', lts: false },
     { cycle: '2024-12-17', releaseDate: '2024-12-17', eol: false, lts: true },
     { cycle: 'latest', releaseDate: '2024-12-17', eol: false, lts: true },
   ],
   'o1-mini': [
-    { cycle: '2024-09-12', releaseDate: '2024-09-12', eol: false, lts: true },
+    { cycle: '2024-09-12', releaseDate: '2024-09-12', eol: '2025-10-27', lts: false },
     { cycle: 'latest', releaseDate: '2024-09-12', eol: false, lts: true },
   ],
   'o3-mini': [
     { cycle: '2025-01-31', releaseDate: '2025-01-31', eol: false, lts: true },
     { cycle: 'latest', releaseDate: '2025-01-31', eol: false, lts: true },
   ],
-  // GPT-5 series
-  'gpt-5': [
-    { cycle: '2025-08-07', releaseDate: '2025-08-07', eol: false, lts: true },
-    { cycle: 'latest', releaseDate: '2025-08-07', eol: false, lts: true },
+
+  // Realtime & Audio
+  'gpt-4o-realtime-preview': [
+    { cycle: '2024-10-01', releaseDate: '2024-10-01', eol: '2025-10-10', lts: false },
+    { cycle: '2024-12-17', releaseDate: '2024-12-17', eol: '2026-02-27', lts: false },
+    { cycle: '2025-06-03', releaseDate: '2025-06-03', eol: '2026-02-27', lts: false },
+    { cycle: 'latest', releaseDate: '2024-10-01', eol: '2026-02-27', lts: false },
   ],
-  'gpt-5.1': [
-    { cycle: '2025-11-01', releaseDate: '2025-11-01', eol: false, lts: true },
-    { cycle: 'latest', releaseDate: '2025-11-01', eol: false, lts: true },
+  'gpt-4o-audio-preview': [
+    { cycle: '2024-10-01', releaseDate: '2024-10-01', eol: '2025-10-10', lts: false },
   ],
-  // Legacy models
-  'davinci': [
-    { cycle: '002', releaseDate: '2020-06-01', eol: '2024-01-04', lts: false },
+
+  // GPT-3.5 Series
+  'gpt-3.5-turbo': [
+    { cycle: '0301', releaseDate: '2023-03-01', eol: '2024-09-13', lts: false },
+    { cycle: '0613', releaseDate: '2023-06-13', eol: '2024-09-13', lts: false },
+    { cycle: '16k-0613', releaseDate: '2023-06-13', eol: '2024-09-13', lts: false },
+    { cycle: '1106', releaseDate: '2023-11-06', eol: '2026-09-28', lts: false },
+    { cycle: '0125', releaseDate: '2024-01-25', eol: '2025-11-14', lts: false },
+    { cycle: 'latest', releaseDate: '2024-01-25', eol: false, lts: true },
   ],
-  'curie': [
-    { cycle: '001', releaseDate: '2020-06-01', eol: '2024-01-04', lts: false },
+  'gpt-3.5-turbo-instruct': [
+    { cycle: 'latest', releaseDate: '2023-09-14', eol: '2026-09-28', lts: false },
   ],
-  'babbage': [
-    { cycle: '001', releaseDate: '2020-06-01', eol: '2024-01-04', lts: false },
+
+  // DALL-E
+  'dall-e-2': [
+    { cycle: 'latest', releaseDate: '2022-04-06', eol: '2026-05-12', lts: false },
   ],
-  'ada': [
-    { cycle: '001', releaseDate: '2020-06-01', eol: '2024-01-04', lts: false },
+  'dall-e-3': [
+    { cycle: 'latest', releaseDate: '2023-11-06', eol: '2026-05-12', lts: false },
+  ],
+
+  // Legacy / Deprecated
+  'codex-mini-latest': [
+    { cycle: 'latest', releaseDate: '2023-03-20', eol: '2026-01-16', lts: false },
+  ],
+  'babbage-002': [
+    { cycle: 'latest', releaseDate: '2023-08-22', eol: '2026-09-28', lts: false },
+  ],
+  'davinci-002': [
+    { cycle: 'latest', releaseDate: '2023-08-22', eol: '2026-09-28', lts: false },
+  ],
+  'text-moderation': [
+    { cycle: '007', releaseDate: '2023-09-26', eol: '2025-10-27', lts: false },
+    { cycle: 'stable', releaseDate: '2023-09-26', eol: '2025-10-27', lts: false },
+    { cycle: 'latest', releaseDate: '2023-09-26', eol: '2025-10-27', lts: false },
   ],
 };
 
@@ -696,6 +744,10 @@ export const MODEL_PATTERNS: Record<string, { provider: string; model: string }>
   'o3-mini': { provider: 'openai', model: 'o3-mini' },
   'gpt-5': { provider: 'openai', model: 'gpt-5' },
   'gpt-5.1': { provider: 'openai', model: 'gpt-5.1' },
+  'gpt-5-mini': { provider: 'openai', model: 'gpt-5-mini' },
+  'gpt-5-nano': { provider: 'openai', model: 'gpt-5-nano' },
+  'gpt-5-pro': { provider: 'openai', model: 'gpt-5-pro' },
+  'gpt-4.1': { provider: 'openai', model: 'gpt-4.1' },
   
   // Anthropic patterns
   'claude-3-opus': { provider: 'anthropic', model: 'claude-3-opus' },

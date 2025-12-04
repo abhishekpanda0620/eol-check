@@ -182,7 +182,7 @@ export function scanForModelUsage(dir: string): DetectedAIModel[] {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Ignore permission errors
     }
   };
@@ -202,8 +202,8 @@ export function scanForModelUsage(dir: string): DetectedAIModel[] {
         // Check for model string in various contexts
         const patterns = [
           new RegExp(`['"\`]${escapeRegex(pattern)}['"\`]`, 'gi'),
-          new RegExp(`model['":\s=]+['"\`]?${escapeRegex(pattern)}`, 'gi'),
-          new RegExp(`MODEL['":\s=]+['"\`]?${escapeRegex(pattern)}`, 'gi'),
+          new RegExp(`model['":= \t]+['"\`]?${escapeRegex(pattern)}`, 'gi'),
+          new RegExp(`MODEL['":= \t]+['"\`]?${escapeRegex(pattern)}`, 'gi'),
         ];
         
         for (const regex of patterns) {
@@ -253,7 +253,7 @@ export function scanForModelUsage(dir: string): DetectedAIModel[] {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Ignore read errors
     }
   }

@@ -6,13 +6,14 @@
 [![codecov](https://codecov.io/gh/abhishekpanda0620/eol-check/branch/main/graph/badge.svg)](https://codecov.io/gh/abhishekpanda0620/eol-check)
 
 
-A CLI tool to check the End-Of-Life (EOL) status of your development environment and project dependencies.
+A CLI tool to check the End-Of-Life (EOL) status of your development environment, project dependencies, and AI/ML models.
 
 ## Features
 
 -   **Automated Detection**: Detects Node.js version, package manager (npm/yarn/pnpm), and OS (Ubuntu/Alpine/Debian).
 -   **System Service Scanning**: Detects and checks EOL status of local system services (Redis, PostgreSQL, Docker, etc.).
--   **Real-time Data**: Fetches the latest EOL data from [endoflife.date](https://endoflife.date).
+-   **AI/ML Model Tracking** *(v1.5.0)*: Scans for AI model usage and checks deprecation status for OpenAI, Anthropic, Google, Meta, Mistral, and Cohere models.
+-   **Real-time Data**: Fetches the latest EOL data from [endoflife.date](https://endoflife.date) and AI provider documentation.
 -   **Actionable Feedback**: clearly indicates if a component is supported, approaching EOL, or EOL.
 
 ## Installation
@@ -99,6 +100,7 @@ eol-check query postgresql 14
 | Build Tools | Various | Gradle, Maven, Ant, Bazel |
 | Container/DevOps | Binary Check | Docker, Containerd, Podman |
 | System Services | Binary Check | Redis, PostgreSQL, MySQL, MongoDB, Docker, Git, Python, Java, Go |
+| AI/ML Models | Code & Config | OpenAI (GPT), Anthropic (Claude), Google (Gemini), Meta (Llama), Mistral, Cohere |
 
 ### Example Output
 
@@ -138,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: abhishekpanda0620/eol-check@v1.4.3
+      - uses: abhishekpanda0620/eol-check@v1.5.0
         with:
           generate-html: true
 ```
