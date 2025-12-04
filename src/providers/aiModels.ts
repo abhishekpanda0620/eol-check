@@ -94,6 +94,15 @@ export const OPENAI_MODELS: Record<string, AIModelCycle[]> = {
     { cycle: '2025-01-31', releaseDate: '2025-01-31', eol: false, lts: true },
     { cycle: 'latest', releaseDate: '2025-01-31', eol: false, lts: true },
   ],
+  // GPT-5 series
+  'gpt-5': [
+    { cycle: '2025-08-07', releaseDate: '2025-08-07', eol: false, lts: true },
+    { cycle: 'latest', releaseDate: '2025-08-07', eol: false, lts: true },
+  ],
+  'gpt-5.1': [
+    { cycle: '2025-11-01', releaseDate: '2025-11-01', eol: false, lts: true },
+    { cycle: 'latest', releaseDate: '2025-11-01', eol: false, lts: true },
+  ],
   // Legacy models
   'davinci': [
     { cycle: '002', releaseDate: '2020-06-01', eol: '2024-01-04', lts: false },
@@ -680,6 +689,8 @@ export const MODEL_PATTERNS: Record<string, { provider: string; model: string }>
   'o1-mini': { provider: 'openai', model: 'o1-mini' },
   'o1-preview': { provider: 'openai', model: 'o1' },
   'o3-mini': { provider: 'openai', model: 'o3-mini' },
+  'gpt-5': { provider: 'openai', model: 'gpt-5' },
+  'gpt-5.1': { provider: 'openai', model: 'gpt-5.1' },
   
   // Anthropic patterns
   'claude-3-opus': { provider: 'anthropic', model: 'claude-3-opus' },
