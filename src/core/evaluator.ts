@@ -11,6 +11,7 @@ export enum Category {
   OS = 'Operating System',
   SERVICE = 'System Services',
   DEPENDENCY = 'Project Dependencies',
+  AI_MODEL = 'AI/ML Models',
 }
 
 export interface EvaluationResult {
@@ -102,5 +103,99 @@ export function evaluateVersion(
     version,
     status: Status.OK,
     message: `Version ${cycle.cycle} is supported (ends ${cycle.eol || 'unknown'})`,
+  };
+}
+
+import { AIModelCycle } from '../providers/aiModels';
+
+export function evaluateAIModel(
+  provider: string,
+  model: string,
+  version: string,
+  eolData: AIModelCycle[],
+): EvaluationResult {
+  const component = `${provider}/${model}`;
+  
+  // 1. Try exact match
+  let cycle = eolData.find((c) => c.cycle === version);
+
+  // 2. If version is 'latest', find the latest cycle
+  if (version === 'latest') {
+    cycle = eolData.find((c) => c.cycle === 'latest');
+  }
+
+  if (!cycle) {
+    // If no exact match, try to find a cycle that matches the start
+    cycle = eolData.find((c) => version.startsWith(c.cycle));
+  }
+
+  if (!cycle) {
+    const availableVersions = eolData.slice(0, 5).map(c => c.cycle).join(', ');
+    return {
+      component,
+      version,
+      status: Status.WARN,
+      message: `Model version ${version} not found in EOL data. Known versions: ${availableVersions}${eolData.length > 5 ? ', ...' : ''}`,
+      category: Category.AI_MODEL,
+    };
+  }
+
+  const now = new Date();
+  const eolDate = typeof cycle.eol === 'string' ? new Date(cycle.eol) : null;
+  const isEolBoolean = typeof cycle.eol === 'boolean' && cycle.eol === true;
+
+  // Check for explicit deprecation first
+  if (cycle.deprecated) {
+    return {
+      component,
+      version: cycle.cycle,
+      status: Status.WARN,
+      message: `Model is deprecated${cycle.replacement ? `. Use ${cycle.replacement} instead` : ''}${cycle.eol ? ` (EOL ${cycle.eol})` : ''}`,
+      category: Category.AI_MODEL,
+    };
+  }
+
+  if (isEolBoolean) {
+    return {
+      component,
+      version: cycle.cycle,
+      status: Status.ERR,
+      message: `Model is EOL${cycle.replacement ? `. Upgrade to ${cycle.replacement}` : ''}`,
+      category: Category.AI_MODEL,
+    };
+  }
+
+  if (eolDate && now > eolDate) {
+    return {
+      component,
+      version: cycle.cycle,
+      status: Status.ERR,
+      message: `Model is EOL (ended ${cycle.eol})${cycle.replacement ? `. Upgrade to ${cycle.replacement}` : ''}`,
+      category: Category.AI_MODEL,
+    };
+  }
+
+  if (eolDate) {
+    const monthsUntilEol =
+      (eolDate.getFullYear() - now.getFullYear()) * 12 +
+      (eolDate.getMonth() - now.getMonth());
+
+    if (monthsUntilEol <= 6) {
+      return {
+        component,
+        version: cycle.cycle,
+        status: Status.WARN,
+        message: `Model is approaching EOL (ends ${cycle.eol})`,
+        category: Category.AI_MODEL,
+      };
+    }
+  }
+
+  return {
+    component,
+    version: cycle.cycle,
+    status: Status.OK,
+    message: `Model is supported${cycle.lts ? ' (LTS)' : ''}${cycle.eol ? ` (ends ${cycle.eol})` : ''}`,
+    category: Category.AI_MODEL,
   };
 }

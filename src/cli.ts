@@ -4,8 +4,10 @@ import chalk from 'chalk';
 import open from 'open';
 import { scanEnvironment } from './scanners/scannerEngine';
 import { fetchEolData } from './core/endoflifeApi';
-import { evaluateVersion, Status, Category } from './core/evaluator';
+import { evaluateVersion, evaluateAIModel, Status, Category } from './core/evaluator';
 import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
+import { scanAIModels } from './scanners/aiModelScanner';
+import { getAIModelEolData, PROVIDER_NAMES, refreshAIModelData } from './providers/aiModels';
 import { mapPackageToProduct } from './core/productMapper';
 import { generateHtmlReport } from './reporters/htmlReporter';
 
@@ -78,6 +80,12 @@ program.parse(process.argv);
 async function main(options: any) {
   if (options.verbose) {
     console.log(chalk.blue('Scanning environment...'));
+  }
+
+  // Refresh AI model data if requested
+  if (options.refreshCache) {
+    if (options.verbose) console.log('Refreshing AI model data from providers...');
+    await refreshAIModelData();
   }
 
   const scanResult = scanEnvironment();
@@ -192,6 +200,36 @@ async function main(options: any) {
     }
   }
 
+  // Check AI/ML Models
+  if (options.verbose) console.log('Scanning for AI/ML models...');
+  const aiScanResult = scanAIModels(process.cwd());
+  
+  // Process detected SDKs
+  for (const sdk of aiScanResult.sdks) {
+    if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
+    // We don't evaluate SDKs directly here as they are covered by dependency scanner
+    // But we could add specific checks for SDK versions if needed
+  }
+
+  // Process detected Models
+  for (const model of aiScanResult.models) {
+    if (options.verbose) 
+      console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+    
+    const eolData = getAIModelEolData(model.provider, model.model);
+    if (eolData) {
+      const result = evaluateAIModel(
+        PROVIDER_NAMES[model.provider] || model.provider, 
+        model.model, 
+        model.version, 
+        eolData
+      );
+      results.push(result);
+    } else if (options.verbose) {
+      console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+    }
+  }
+
   // Generate HTML report if requested
   if (options.html) {
     try {
@@ -214,7 +252,7 @@ async function main(options: any) {
     let hasError = false;
 
     // Group results by category
-    const categories = [Category.RUNTIME, Category.OS, Category.SERVICE, Category.DEPENDENCY];
+    const categories = [Category.RUNTIME, Category.OS, Category.SERVICE, Category.DEPENDENCY, Category.AI_MODEL];
     
     for (const category of categories) {
       const categoryResults = results.filter((r) => r.category === category);
