@@ -216,6 +216,10 @@ export const GOOGLE_MODELS: Record<string, AIModelCycle[]> = {
     { cycle: 'preview-0520', releaseDate: '2025-05-20', eol: '2025-12-01', lts: false },
     { cycle: 'latest', releaseDate: '2025-05-20', eol: false, lts: true },
   ],
+  'gemini-3-pro': [
+    { cycle: 'preview', releaseDate: '2025-11-18', eol: false, lts: false },
+    { cycle: 'latest', releaseDate: '2025-11-18', eol: false, lts: true },
+  ],
 };
 
 /**
@@ -489,6 +493,7 @@ async function fetchGoogleAIData(): Promise<void> {
     
     // Target Gemini models
     const geminiPatterns = [
+      { pattern: /gemini-3-pro|gemini 3 pro|gemini 3\.0 pro/gi, model: 'gemini-3-pro' },
       { pattern: /gemini-2\.5-pro|gemini 2\.5 pro/gi, model: 'gemini-2.5-pro' },
       { pattern: /gemini-2\.5-flash|gemini 2\.5 flash/gi, model: 'gemini-2.5-flash' },
       { pattern: /gemini-2\.0-flash|gemini 2\.0 flash/gi, model: 'gemini-2.0-flash' },
@@ -713,6 +718,7 @@ export const MODEL_PATTERNS: Record<string, { provider: string; model: string }>
   'gemini-2.0-flash': { provider: 'google', model: 'gemini-2.0-flash' },
   'gemini-2.5-pro': { provider: 'google', model: 'gemini-2.5-pro' },
   'gemini-2.5-flash': { provider: 'google', model: 'gemini-2.5-flash' },
+  'gemini-3-pro': { provider: 'google', model: 'gemini-3-pro' },
   
   // Mistral patterns
   'mistral-large': { provider: 'mistral', model: 'mistral-large' },
