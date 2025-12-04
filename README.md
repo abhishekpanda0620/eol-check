@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: abhishekpanda0620/eol-check@v1.4.1
+      - uses: abhishekpanda0620/eol-check@v1.4.2
         with:
           generate-html: true
 ```

@@ -14,12 +14,20 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.4.1')
+  .version('1.4.2')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
   .option('--verbose', 'Show verbose output')
-  .option('--refresh-cache', 'Force refresh cache from API');
+  .option('--refresh-cache', 'Force refresh cache from API')
+  .action(async (cmdOptions) => {
+    try {
+      await main(cmdOptions);
+    } catch (err) {
+      console.error(chalk.red('Error running eol-check:'), err);
+      process.exit(1);
+    }
+  });
 
 program
   .command('query')
@@ -66,12 +74,8 @@ program
   });
 
 program.parse(process.argv);
-const options = program.opts();
 
-// If no command was run (i.e., main scan), proceed with main()
-if (!process.argv.slice(2).includes('query')) {
-
-async function main() {
+async function main(options: any) {
   if (options.verbose) {
     console.log(chalk.blue('Scanning environment...'));
   }
@@ -220,8 +224,4 @@ async function main() {
   }
 }
 
-  main().catch((err) => {
-    console.error(chalk.red('Error running eol-check:'), err);
-    process.exit(1);
-  });
-}
+
