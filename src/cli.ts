@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.4.0')
+  .version('1.4.1')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
