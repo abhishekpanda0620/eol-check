@@ -6,11 +6,19 @@ export enum Status {
   ERR = 'ERR',
 }
 
+export enum Category {
+  RUNTIME = 'Runtime Environment',
+  OS = 'Operating System',
+  SERVICE = 'System Services',
+  DEPENDENCY = 'Project Dependencies',
+}
+
 export interface EvaluationResult {
   component: string;
   version: string;
   status: Status;
   message: string;
+  category?: Category;
 }
 
 export function evaluateVersion(

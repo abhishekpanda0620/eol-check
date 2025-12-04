@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import open from 'open';
 import { scanEnvironment } from './scanners/scannerEngine';
 import { fetchEolData } from './core/endoflifeApi';
-import { evaluateVersion, Status } from './core/evaluator';
+import { evaluateVersion, Status, Category } from './core/evaluator';
 import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
 import { mapPackageToProduct } from './core/productMapper';
 import { generateHtmlReport } from './reporters/htmlReporter';
@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.4.2')
+  .version('1.4.3')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
@@ -88,7 +88,9 @@ async function main(options: any) {
     if (options.verbose)
       console.log(`Checking Node.js ${scanResult.nodeVersion}...`);
     const nodeData = await fetchEolData('nodejs', options.refreshCache);
-    results.push(evaluateVersion('Node.js', scanResult.nodeVersion, nodeData));
+    const result = evaluateVersion('Node.js', scanResult.nodeVersion, nodeData);
+    result.category = Category.RUNTIME;
+    results.push(result);
   }
 
   // Check OS (if detected)
@@ -111,7 +113,9 @@ async function main(options: any) {
         // Extract version from string like "Ubuntu 22.04.5 LTS" -> "22.04"
         const versionMatch = scanResult.os.match(/(\d+(\.\d+)?)/);
         if (versionMatch) {
-          results.push(evaluateVersion(scanResult.os, versionMatch[0], osData));
+          const result = evaluateVersion(scanResult.os, versionMatch[0], osData);
+          result.category = Category.OS;
+          results.push(result);
         }
       } catch (error) {
         if (options.verbose) {
@@ -137,7 +141,9 @@ async function main(options: any) {
       try {
         const eolData = await fetchEolData(service.product, options.refreshCache);
         if (eolData && eolData.length > 0) {
-          results.push(evaluateVersion(service.name, service.version, eolData));
+          const result = evaluateVersion(service.name, service.version, eolData);
+          result.category = Category.SERVICE;
+          results.push(result);
         }
       } catch (error) {
         if (options.verbose) {
@@ -164,7 +170,9 @@ async function main(options: any) {
         const eolData = await fetchEolData(product, options.refreshCache);
         if (eolData && eolData.length > 0) {
           const version = cleanVersion(dep.version);
-          results.push(evaluateVersion(dep.name, version, eolData));
+          const result = evaluateVersion(dep.name, version, eolData);
+          result.category = Category.DEPENDENCY;
+          results.push(result);
         }
       } catch (error) {
         if (options.verbose) {
@@ -205,18 +213,28 @@ async function main(options: any) {
     console.log(chalk.bold('\nEOL Check Results:'));
     let hasError = false;
 
-    results.forEach((res) => {
-      let color = chalk.green;
-      if (res.status === Status.WARN) color = chalk.yellow;
-      if (res.status === Status.ERR) {
-        color = chalk.red;
-        hasError = true;
-      }
+    // Group results by category
+    const categories = [Category.RUNTIME, Category.OS, Category.SERVICE, Category.DEPENDENCY];
+    
+    for (const category of categories) {
+      const categoryResults = results.filter((r) => r.category === category);
+      if (categoryResults.length === 0) continue;
+      
+      console.log(chalk.cyan(`\n── ${category} ──`));
+      
+      categoryResults.forEach((res) => {
+        let color = chalk.green;
+        if (res.status === Status.WARN) color = chalk.yellow;
+        if (res.status === Status.ERR) {
+          color = chalk.red;
+          hasError = true;
+        }
 
-      console.log(
-        `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}`,
-      );
-    });
+        console.log(
+          `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}`,
+        );
+      });
+    }
 
     if (hasError) {
       process.exit(1);
