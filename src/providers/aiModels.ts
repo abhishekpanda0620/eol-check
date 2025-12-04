@@ -151,6 +151,15 @@ export const ANTHROPIC_MODELS: Record<string, AIModelCycle[]> = {
     { cycle: '20250514', releaseDate: '2025-05-14', eol: false, lts: true },
     { cycle: 'latest', releaseDate: '2025-05-14', eol: false, lts: true },
   ],
+  // Claude 4.5 models (via AWS Bedrock: claude-sonnet-4-5, claude-opus-4-1)
+  'claude-sonnet-4.5': [
+    { cycle: '20250929', releaseDate: '2025-09-29', eol: false, lts: true },
+    { cycle: 'latest', releaseDate: '2025-09-29', eol: false, lts: true },
+  ],
+  'claude-opus-4.1': [
+    { cycle: '20250805', releaseDate: '2025-08-05', eol: false, lts: true },
+    { cycle: 'latest', releaseDate: '2025-08-05', eol: false, lts: true },
+  ],
 };
 
 /**
@@ -397,10 +406,12 @@ async function fetchAWSBedrockData(): Promise<void> {
     const html = response.data as string;
     
     // Find Claude models in tables
-    // Look for patterns like: claude-sonnet-4-5 or claude-3-opus
+    // AWS Bedrock uses: claude-sonnet-4-5, claude-opus-4-1, etc.
     const claudePatterns = [
       { pattern: /claude-sonnet-4-5|claude sonnet 4\.5/gi, model: 'claude-sonnet-4.5' },
-      { pattern: /claude-opus-4|claude opus 4/gi, model: 'claude-opus-4' },
+      { pattern: /claude-opus-4-1|claude opus 4\.1/gi, model: 'claude-opus-4.1' },
+      { pattern: /claude-sonnet-4(?!-5)|claude sonnet 4(?!\.)/gi, model: 'claude-sonnet-4' },
+      { pattern: /claude-opus-4(?!-1)|claude opus 4(?!\.)/gi, model: 'claude-opus-4' },
       { pattern: /claude-3-5-sonnet|claude 3\.5 sonnet/gi, model: 'claude-3.5-sonnet' },
       { pattern: /claude-3-5-haiku|claude 3\.5 haiku/gi, model: 'claude-3.5-haiku' },
       { pattern: /claude-3-opus|claude 3 opus/gi, model: 'claude-3-opus' },
@@ -680,6 +691,8 @@ export const MODEL_PATTERNS: Record<string, { provider: string; model: string }>
   'claude-3.5-haiku': { provider: 'anthropic', model: 'claude-3.5-haiku' },
   'claude-sonnet-4': { provider: 'anthropic', model: 'claude-sonnet-4' },
   'claude-opus-4': { provider: 'anthropic', model: 'claude-opus-4' },
+  'claude-sonnet-4.5': { provider: 'anthropic', model: 'claude-sonnet-4.5' },
+  'claude-opus-4.5': { provider: 'anthropic', model: 'claude-opus-4.5' },
   
   
   // Google patterns
@@ -688,6 +701,7 @@ export const MODEL_PATTERNS: Record<string, { provider: string; model: string }>
   'gemini-1.5-flash': { provider: 'google', model: 'gemini-1.5-flash' },
   'gemini-2.0-flash': { provider: 'google', model: 'gemini-2.0-flash' },
   'gemini-2.5-pro': { provider: 'google', model: 'gemini-2.5-pro' },
+  'gemini-2.5-flash': { provider: 'google', model: 'gemini-2.5-flash' },
   
   // Mistral patterns
   'mistral-large': { provider: 'mistral', model: 'mistral-large' },
