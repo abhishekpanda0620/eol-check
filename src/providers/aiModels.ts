@@ -302,73 +302,234 @@ const MODEL_CACHE: Record<string, Record<string, AIModelCycle[]>> = {
 };
 
 /**
- * Fetch latest deprecation data from provider documentation
+ * Refresh AI model data from official sources
+ * 
+ * Sources:
+ * - AWS Bedrock: https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.html
+ * - Google AI: https://ai.google.dev/gemini-api/docs/deprecations
  */
 export async function refreshAIModelData(): Promise<void> {
+  console.log('Fetching AI model data from official sources...');
+  
+  const results = await Promise.allSettled([
+    fetchAWSBedrockData(),
+    fetchGoogleAIData(),
+  ]);
+  
+  let successCount = 0;
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      successCount++;
+    } else {
+      console.warn('Failed to fetch from one source:', result.reason?.message || result.reason);
+    }
+  }
+  
+  console.log(`AI model data refreshed from ${successCount}/${results.length} sources`);
+}
+
+/**
+ * Parse date strings in various formats
+ */
+function parseDate(dateStr: string): string | null {
+  if (!dateStr || dateStr === 'N/A') return null;
+  
+  // Handle "No sooner than MM/DD/YYYY" format
+  const noSoonerMatch = dateStr.match(/no sooner than (\d+)\/(\d+)\/(\d+)/i);
+  if (noSoonerMatch) {
+    const [, month, day, year] = noSoonerMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Handle "Month DD, YYYY" format
+  const monthDayYear = dateStr.match(/(\w+) (\d+), (\d{4})/);
+  if (monthDayYear) {
+    const [, monthName, day, year] = monthDayYear;
+    const months: Record<string, string> = {
+      'January': '01', 'February': '02', 'March': '03', 'April': '04',
+      'May': '05', 'June': '06', 'July': '07', 'August': '08',
+      'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    };
+    const month = months[monthName];
+    if (month) {
+      return `${year}-${month}-${day.padStart(2, '0')}`;
+    }
+  }
+  
+  // Handle "Earliest Month YYYY" format
+  const earliestMatch = dateStr.match(/earliest (\w+) (\d{4})/i);
+  if (earliestMatch) {
+    const [, monthName, year] = earliestMatch;
+    const months: Record<string, string> = {
+      'January': '01', 'February': '02', 'March': '03', 'April': '04',
+      'May': '05', 'June': '06', 'July': '07', 'August': '08',
+      'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    };
+    const month = months[monthName];
+    if (month) {
+      return `${year}-${month}-01`;
+    }
+  }
+  
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  
+  return null;
+}
+
+/**
+ * Fetch Anthropic Claude models from AWS Bedrock lifecycle page
+ */
+async function fetchAWSBedrockData(): Promise<void> {
+  const url = 'https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.html';
+  console.log(`  Fetching: ${url}`);
+  
   try {
-    await Promise.all([
-      fetchAnthropicDeprecations(),
-      // Add other providers here when possible
-    ]);
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; EOLCheck/1.5)',
+      },
+      timeout: 15000,
+    });
+    
+    const html = response.data as string;
+    
+    // Find Claude models in tables
+    // Look for patterns like: claude-sonnet-4-5 or claude-3-opus
+    const claudePatterns = [
+      { pattern: /claude-sonnet-4-5|claude sonnet 4\.5/gi, model: 'claude-sonnet-4.5' },
+      { pattern: /claude-opus-4|claude opus 4/gi, model: 'claude-opus-4' },
+      { pattern: /claude-3-5-sonnet|claude 3\.5 sonnet/gi, model: 'claude-3.5-sonnet' },
+      { pattern: /claude-3-5-haiku|claude 3\.5 haiku/gi, model: 'claude-3.5-haiku' },
+      { pattern: /claude-3-opus|claude 3 opus/gi, model: 'claude-3-opus' },
+      { pattern: /claude-3-sonnet|claude 3 sonnet/gi, model: 'claude-3-sonnet' },
+      { pattern: /claude-3-haiku|claude 3 haiku/gi, model: 'claude-3-haiku' },
+    ];
+    
+    // Extract table rows - simple regex approach
+    const tableRowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let rowMatch;
+    
+    while ((rowMatch = tableRowRegex.exec(html)) !== null) {
+      const rowContent = rowMatch[1];
+      const rowText = rowContent.replace(/<[^>]+>/g, ' ').toLowerCase();
+      
+      for (const { pattern, model } of claudePatterns) {
+        if (pattern.test(rowText)) {
+          // Extract dates from row
+          const dateMatches = rowContent.match(/(\d+\/\d+\/\d{4})/g);
+          const noSoonerMatch = rowText.match(/no sooner than (\d+\/\d+\/\d{4})/i);
+          
+          let eolDate: string | null = null;
+          if (noSoonerMatch) {
+            eolDate = parseDate(`No sooner than ${noSoonerMatch[1]}`);
+          } else if (dateMatches && dateMatches.length > 0) {
+            eolDate = parseDate(`No sooner than ${dateMatches[dateMatches.length - 1]}`);
+          }
+          
+          // Update cache
+          if (MODEL_CACHE.anthropic[model]) {
+            const cycles = MODEL_CACHE.anthropic[model];
+            const latestCycle = cycles.find(c => c.cycle === 'latest');
+            if (latestCycle && eolDate) {
+              latestCycle.eol = eolDate;
+              console.log(`    ✓ Updated ${model}: EOL ${eolDate}`);
+            }
+          }
+          
+          pattern.lastIndex = 0; // Reset regex
+          break;
+        }
+        pattern.lastIndex = 0; // Reset regex
+      }
+    }
   } catch (error) {
-    console.warn('Failed to refresh some AI model data:', error);
+    throw new Error(`AWS Bedrock fetch failed: ${(error as Error).message}`);
   }
 }
 
 /**
- * Crawl Anthropic documentation for deprecation dates
+ * Fetch Google Gemini models from AI Studio deprecations page
  */
-async function fetchAnthropicDeprecations(): Promise<void> {
+async function fetchGoogleAIData(): Promise<void> {
+  const url = 'https://ai.google.dev/gemini-api/docs/deprecations';
+  console.log(`  Fetching: ${url}`);
+  
   try {
-    const response = await axios.get(
-      'https://docs.anthropic.com/en/docs/resources/model-deprecations',
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; EOLCheck/1.0; +https://github.com/abhishekpanda0620/eol-check)',
-        },
-        timeout: 5000,
-      }
-    );
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; EOLCheck/1.5)',
+      },
+      timeout: 15000,
+    });
     
     const html = response.data as string;
     
-    // Regex to find dates and models
-    // Pattern: ### YYYY-MM-DD: Model Name ... ```model-id```
-    const sectionRegex = /### (\d{4}-\d{2}-\d{2}): (.*?)[\s\S]*?```\n(.*?)\n```/g;
+    // Target Gemini models
+    const geminiPatterns = [
+      { pattern: /gemini-2\.5-pro|gemini 2\.5 pro/gi, model: 'gemini-2.5-pro' },
+      { pattern: /gemini-2\.5-flash|gemini 2\.5 flash/gi, model: 'gemini-2.5-flash' },
+      { pattern: /gemini-2\.0-flash|gemini 2\.0 flash/gi, model: 'gemini-2.0-flash' },
+      { pattern: /gemini-1\.5-pro|gemini 1\.5 pro/gi, model: 'gemini-1.5-pro' },
+      { pattern: /gemini-1\.5-flash|gemini 1\.5 flash/gi, model: 'gemini-1.5-flash' },
+    ];
     
-    let match;
-    while ((match = sectionRegex.exec(html)) !== null) {
-      const date = match[1];
-      const title = match[2];
-      const modelId = match[3].trim();
+    // Extract table rows
+    const tableRowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let rowMatch;
+    
+    while ((rowMatch = tableRowRegex.exec(html)) !== null) {
+      const rowContent = rowMatch[1];
+      const rowText = rowContent.replace(/<[^>]+>/g, ' ').toLowerCase();
       
-      // Determine if it's retirement or notification
-      const isRetirement = title.toLowerCase().includes('retired') || 
-                           html.substring(match.index, match.index + 200).toLowerCase().includes('retired');
-      
-      // Update the cache
-      if (MODEL_CACHE.anthropic[modelId]) {
-        const cycles = MODEL_CACHE.anthropic[modelId];
-        // Find the cycle that matches or create a new one
-        let cycle = cycles.find(c => c.cycle === modelId || c.cycle === 'latest');
-        
-        if (cycle) {
-          cycle.eol = date;
-          cycle.deprecated = true;
-        } else {
-          // Add new entry if we found a model ID we didn't know about
-          cycles.push({
-            cycle: modelId,
-            releaseDate: 'unknown',
-            eol: date,
-            lts: false,
-            deprecated: true
-          });
+      for (const { pattern, model } of geminiPatterns) {
+        if (pattern.test(rowText)) {
+          // Extract cells
+          const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+          const cells: string[] = [];
+          let cellMatch;
+          while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+            cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
+          }
+          
+          // Cells: [Model, Release Date, Deprecation Date, Notes]
+          if (cells.length >= 3) {
+            const deprecationText = cells[2] || '';
+            let eolDate: string | null = null;
+            
+            // Check for "Earliest Month YYYY" format
+            const earliestMatch = deprecationText.match(/earliest (\w+ \d{4})/i);
+            if (earliestMatch) {
+              eolDate = parseDate(earliestMatch[0]);
+            } else {
+              // Regular date format
+              const dateMatch = deprecationText.match(/(\w+ \d+, \d{4})/);
+              if (dateMatch) {
+                eolDate = parseDate(dateMatch[1]);
+              }
+            }
+            
+            // Update cache
+            if (MODEL_CACHE.google[model] && eolDate) {
+              const cycles = MODEL_CACHE.google[model];
+              const latestCycle = cycles.find(c => c.cycle === 'latest');
+              if (latestCycle) {
+                latestCycle.eol = eolDate;
+                console.log(`    ✓ Updated ${model}: EOL ${eolDate}`);
+              }
+            }
+          }
+          
+          pattern.lastIndex = 0;
+          break;
         }
+        pattern.lastIndex = 0;
       }
     }
   } catch (error) {
-    // Silent fail, fallback to static data
+    throw new Error(`Google AI fetch failed: ${(error as Error).message}`);
   }
 }
 
