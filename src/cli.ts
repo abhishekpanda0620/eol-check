@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.5.1')
+  .version('1.5.2')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
@@ -371,7 +371,12 @@ async function main(options: any) {
       
       console.log(chalk.cyan(`\n── ${category} ──`));
       
-      categoryResults.forEach((res) => {
+      categoryResults
+        .sort((a, b) => {
+          const priority = { [Status.ERR]: 0, [Status.WARN]: 1, [Status.OK]: 2 };
+          return priority[a.status] - priority[b.status];
+        })
+        .forEach((res) => {
         let color = chalk.green;
         if (res.status === Status.WARN) color = chalk.yellow;
         if (res.status === Status.ERR) {
