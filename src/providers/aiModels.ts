@@ -399,6 +399,26 @@ export async function refreshAIModelData(): Promise<void> {
 }
 
 /**
+ * Safely strip HTML tags from a string
+ * Uses iterative approach to handle nested/malformed tags and removes orphaned angle brackets
+ */
+function stripHtmlTags(html: string): string {
+  let result = html;
+  let previous = '';
+  
+  // Iteratively remove HTML tags until no more are found
+  while (result !== previous) {
+    previous = result;
+    result = result.replace(/<[^>]*>/g, ' ');
+  }
+  
+  // Remove any remaining angle brackets that could cause injection
+  result = result.replace(/[<>]/g, '');
+  
+  return result;
+}
+
+/**
  * Parse date strings in various formats
  */
 function parseDate(dateStr: string): string | null {
@@ -486,7 +506,7 @@ async function fetchAWSBedrockData(): Promise<void> {
     
     while ((rowMatch = tableRowRegex.exec(html)) !== null) {
       const rowContent = rowMatch[1];
-      const rowText = rowContent.replace(/<[^>]+>/g, ' ').toLowerCase();
+      const rowText = stripHtmlTags(rowContent).toLowerCase();
       
       for (const { pattern, model } of claudePatterns) {
         if (pattern.test(rowText)) {
@@ -555,7 +575,7 @@ async function fetchGoogleAIData(): Promise<void> {
     
     while ((rowMatch = tableRowRegex.exec(html)) !== null) {
       const rowContent = rowMatch[1];
-      const rowText = rowContent.replace(/<[^>]+>/g, ' ').toLowerCase();
+      const rowText = stripHtmlTags(rowContent).toLowerCase();
       
       for (const { pattern, model } of geminiPatterns) {
         if (pattern.test(rowText)) {
@@ -564,7 +584,7 @@ async function fetchGoogleAIData(): Promise<void> {
           const cells: string[] = [];
           let cellMatch;
           while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
-            cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
+            cells.push(stripHtmlTags(cellMatch[1]).trim());
           }
           
           // Cells: [Model, Release Date, Deprecation Date, Notes]
