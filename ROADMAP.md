@@ -2,11 +2,11 @@
 
 This document outlines the planned features and improvements for `eol-check`. Community feedback and contributions are welcome!
 
-## 🚀 v1.4 - Enhanced User Experience
+## ✅ v1.4 - Enhanced User Experience (Released)
 
 ### Auto-Open HTML Reports
-**Status:** Planned  
-**Priority:** High
+**Status:** ✅ Completed  
+**Released:** v1.4.0
 
 Automatically open generated HTML reports in the default browser instead of just saving them to disk.
 
@@ -16,15 +16,15 @@ eol-check --html report.html --no-browser  # Opt-out option
 ```
 
 **Implementation:**
-- Add `open` package dependency
-- Add `--no-browser` flag to disable auto-open
-- Platform-aware browser detection (Windows, macOS, Linux)
+- ✅ Added `open` package dependency
+- ✅ Added `--no-browser` flag to disable auto-open
+- ✅ Platform-aware browser detection (Windows, macOS, Linux)
 
 ---
 
 ### Query Specific Services
-**Status:** Planned  
-**Priority:** High
+**Status:** ✅ Completed  
+**Released:** v1.4.0
 
 Allow users to query specific services/versions without auto-detection.
 
@@ -32,51 +32,78 @@ Allow users to query specific services/versions without auto-detection.
 # Query specific service
 eol-check query nodejs 18.0.0
 eol-check query python 3.9
-eol-check --service redis --version 7.0
 
-# Check multiple services at once
-eol-check query nodejs:18.0.0 python:3.9 redis:7.0
+# Query AI models
+eol-check query anthropic claude-3-opus
+eol-check query openai gpt-4
 ```
 
 **Use Cases:**
-- Quick EOL lookups without project context
-- CI/CD planning and migration planning
-- Documentation and research
+- ✅ Quick EOL lookups without project context
+- ✅ CI/CD planning and migration planning
+- ✅ Documentation and research
 
 ---
 
-## 🔮 v1.5 - Modular Data Sources
+## ✅ v1.5 - AI/ML Model EOL Tracking (Released)
 
-### Multi-Provider Architecture
+### AI/ML Models Provider
+**Status:** ✅ Completed  
+**Released:** v1.5.0
+
+Track deprecation and EOL for generative AI models from major providers.
+
+**Supported Providers:**
+
+- ✅ **OpenAI**: GPT-3.5-turbo, GPT-4, GPT-4o, GPT-5, o1/o3, DALL-E
+- ✅ **Anthropic**: Claude 1-4, Claude 3.5/4.5 Sonnet/Opus/Haiku
+- ✅ **Google**: PaLM 2, Gemini 1.0/1.5/2.0/2.5/3.0 Pro/Flash
+- ✅ **Meta**: Llama 2, 3, 3.1, 3.2, 3.3, 4
+- ✅ **Mistral AI**: Mistral 7B, Mixtral, Mistral Large/Small, Codestral, Pixtral
+- ✅ **Cohere**: Command, Command-R, Command-A
+
+**Features:**
+- Automatic detection of AI SDKs in package.json
+- Code scanning for model references in source files
+- Web crawlers for AWS Bedrock and Google AI deprecation data
+- Query command integration for AI models
+
+```bash
+# Scan project for AI model usage
+eol-check  # Auto-detects AI SDKs and model usage
+
+# Query specific AI models
+eol-check query openai gpt-4
+eol-check query anthropic claude-3-opus
+eol-check query google gemini-1.5-pro
+```
+
+---
+
+## 🔮 v1.6 - Infrastructure & Custom Data (Planned)
+
+### Cloud Infrastructure Scanners
 **Status:** Planned  
 **Priority:** High
 
-Create a modular data source system to support multiple EOL data providers beyond endoflife.date.
+Add scanners for cloud infrastructure configuration files. Note: EOL data for cloud services already exists in endoflife.date (aws-lambda, amazon-eks, amazon-rds-*, azure-kubernetes-service, google-kubernetes-engine, etc.).
 
-**Providers to Support:**
+**Scanners to Add:**
 
-#### 1. AI/ML Models Provider
-Track deprecation and EOL for AI models:
-- **OpenAI**: GPT-3.5-turbo, GPT-4, DALL-E versions
-- **Anthropic**: Claude 1, Claude 2, Claude 3 variants
-- **Google**: Gemini, PaLM, Bard versions
-- **Meta**: Llama 2, Llama 3 versions
-- **AWS Bedrock**: Model availability and deprecation
-- **Azure OpenAI**: Model version lifecycle
-- **Hugging Face**: Popular model versions
+#### 1. Infrastructure File Detection
+- **Serverless Framework**: Scan `serverless.yml` for runtime versions
+- **AWS SAM**: Scan `template.yaml` for Lambda runtimes
+- **Terraform**: Scan `.tf` files for EKS/RDS/Lambda versions
+- **CloudFormation**: Scan templates for AWS resource versions
+- **Kubernetes**: Scan manifests for deprecated API versions
 
 ```bash
-eol-check --provider openai
-# Detects OpenAI SDK versions in project and checks model support
+eol-check --scan-infra  # Scan infrastructure files
 ```
 
-#### 2. Cloud Services Provider
-- **AWS**: Lambda runtimes, RDS engine versions, EKS versions
-- **Azure**: Function runtimes, App Service versions
-- **GCP**: Cloud Functions runtimes, GKE versions
-- **Serverless Frameworks**: Framework versions and runtime support
+---
 
-#### 3. Custom Data Provider
+### Custom Data Provider
 Allow users to define custom EOL data via JSON/YAML files:
 
 ```yaml
@@ -108,6 +135,144 @@ class DataProviderRegistry {
   query(product: string, version: string): Promise<EOLResult>;
 }
 ```
+
+---
+
+## 🔮 v1.7 - CI/CD & Export Integrations (Planned)
+
+### SBOM Export
+**Status:** Planned  
+**Priority:** High
+
+Generate Software Bill of Materials (SBOM) with EOL annotations in standard formats.
+
+```bash
+eol-check --sbom cyclonedx > sbom.json
+eol-check --sbom spdx > sbom.spdx.json
+```
+
+**Formats:**
+- CycloneDX (JSON/XML)
+- SPDX (JSON/Tag-Value)
+
+---
+
+### CI/CD Enhancements
+**Status:** Planned  
+**Priority:** High
+
+Improved integrations for CI/CD pipelines.
+
+- **Exit codes**: Configurable failure thresholds (`--fail-on eol`, `--fail-on deprecated`)
+- **SARIF output**: For GitHub Code Scanning integration
+- **JUnit XML**: For CI test result parsing
+- **GitLab CI integration**: Native `.gitlab-ci.yml` template
+
+```bash
+eol-check --output sarif > results.sarif
+eol-check --fail-on eol --warn-on deprecated
+```
+
+---
+
+### Pre-commit Hook
+**Status:** Planned  
+**Priority:** Medium
+
+Native pre-commit hook support for blocking commits with EOL dependencies.
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/abhishekpanda0620/eol-check
+    rev: v1.7.0
+    hooks:
+      - id: eol-check
+```
+
+---
+
+## 🔮 v1.8 - Developer Experience (Planned)
+
+### VSCode Extension
+**Status:** Planned  
+**Priority:** High
+
+Visual Studio Code extension with inline EOL warnings.
+
+**Features:**
+- Inline decorations for EOL dependencies in `package.json`, `requirements.txt`, etc.
+- Hover tooltips with EOL dates and upgrade suggestions
+- Problems panel integration
+- Quick fix actions for version upgrades
+
+---
+
+### Watch Mode
+**Status:** Planned  
+**Priority:** Medium
+
+Continuous monitoring mode for development.
+
+```bash
+eol-check --watch
+# Re-scans on file changes, shows desktop notifications
+```
+
+---
+
+### Notification Webhooks
+**Status:** Planned  
+**Priority:** Medium
+
+Send EOL alerts to external services.
+
+```bash
+eol-check --webhook slack:https://hooks.slack.com/...
+eol-check --webhook discord:https://discord.com/api/webhooks/...
+eol-check --webhook email:team@example.com
+```
+
+---
+
+## 🔮 v1.9 - Stability & Performance (Planned)
+
+### Test Coverage & Quality
+**Status:** Planned  
+**Priority:** Critical
+
+Ensure production-ready stability before v2.0.
+
+- Increase test coverage to 90%+
+- Add end-to-end integration tests
+- Performance benchmarking suite
+- Fuzz testing for parsers
+
+---
+
+### Performance Optimization
+**Status:** Planned  
+**Priority:** High
+
+- Parallel scanning for large monorepos
+- Caching layer for API responses
+- Incremental scanning (only changed files)
+- Memory optimization for large projects
+
+```bash
+eol-check --cache --parallel 4
+```
+
+---
+
+### Documentation & Polish
+**Status:** Planned  
+**Priority:** High
+
+- Complete API documentation
+- Architecture Decision Records (ADRs)
+- Video tutorials and walkthroughs
+- Improved error messages and troubleshooting guide
 
 ---
 
@@ -166,14 +331,14 @@ Check EOL status for database schemas, container images, and package registries:
 
 ### Potential Features
 - [ ] Plugin system for custom scanners
-- [ ] VSCode extension with inline warnings
-- [ ] Pre-commit hooks for EOL detection
-- [ ] SBOM (Software Bill of Materials) export
+- [x] ~~VSCode extension with inline warnings~~ → **Planned for v1.8**
+- [x] ~~Pre-commit hooks for EOL detection~~ → **Planned for v1.7**
+- [x] ~~SBOM (Software Bill of Materials) export~~ → **Planned for v1.7**
 - [ ] Integration with Dependabot/Renovate
-- [ ] Notification webhooks (email, Slack, Discord)
+- [x] ~~Notification webhooks (email, Slack, Discord)~~ → **Planned for v1.8**
 - [ ] Multi-language support for reports
 - [ ] Historical EOL analytics and trends
-- [ ] Terraform/IaC version scanning
+- [x] ~~Terraform/IaC version scanning~~ → **Planned for v1.6**
 - [ ] API endpoint for programmatic access
 
 
@@ -181,19 +346,19 @@ Check EOL status for database schemas, container images, and package registries:
 ## 🚧 Technical Debt & Improvements
 
 ### Code Quality
-- [ ] Increase test coverage to 90%+
-- [ ] Add integration tests
-- [ ] Performance benchmarking
+- [ ] Increase test coverage to 90%+ → **Planned for v1.9**
+- [ ] Add integration tests → **Planned for v1.9**
+- [ ] Performance benchmarking → **Planned for v1.9**
 - [ ] Refactor scanner engine for better modularity
 
 ### Documentation
-- [ ] API documentation
+- [ ] API documentation → **Planned for v1.9**
 - [ ] Plugin development guide
-- [ ] Architecture decision records (ADRs)
-- [ ] Video tutorials
+- [ ] Architecture decision records (ADRs) → **Planned for v1.9**
+- [ ] Video tutorials → **Planned for v1.9**
 
 ### DevOps
-- [ ] Automated release workflow
+- [x] ~~Automated release workflow~~ ✅ Completed
 - [ ] Canary releases for npm
 - [ ] Performance monitoring
 - [ ] Usage analytics (opt-in)
@@ -208,5 +373,5 @@ For major features, please open a discussion issue first to align on design and 
 
 ---
 
-**Last Updated:** December 3, 2025  
+**Last Updated:** December 5, 2025  
 **Maintainer:** [@abhishekpanda0620](https://github.com/abhishekpanda0620)

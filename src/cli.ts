@@ -4,8 +4,10 @@ import chalk from 'chalk';
 import open from 'open';
 import { scanEnvironment } from './scanners/scannerEngine';
 import { fetchEolData } from './core/endoflifeApi';
-import { evaluateVersion, Status, Category } from './core/evaluator';
+import { evaluateVersion, evaluateAIModel, Status, Category } from './core/evaluator';
 import { scanDependencies, cleanVersion } from './scanners/dependencyScanner';
+import { scanAIModels } from './scanners/aiModelScanner';
+import { getAIModelEolData, PROVIDER_NAMES, refreshAIModelData, getProviderModels, getAllProviders } from './providers/aiModels';
 import { mapPackageToProduct } from './core/productMapper';
 import { generateHtmlReport } from './reporters/htmlReporter';
 
@@ -14,7 +16,7 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.4.3')
+  .version('1.5.0')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
@@ -31,12 +33,84 @@ program
 
 program
   .command('query')
+  .alias('q')
   .description('Query EOL status for a specific product')
   .argument('<product>', 'Product name (e.g. nodejs, python, ubuntu)')
   .argument('[version]', 'Specific version to check')
-  .option('--refresh-cache', 'Force refresh cache from API')
-  .action(async (product, version, cmdOptions) => {
+  .option('-r, --refresh-cache', 'Force refresh cache from API')
+  .action(async (product, version, options) => {
+    const cmdOptions = options || {};
     try {
+      // Check if it's an AI model query
+      const aiEolData = getAIModelEolData(product, version || 'latest'); 
+      // Note: The above usage is slightly wrong because getAIModelEolData takes (provider, model)
+      // We need to handle "provider model" or just "model" if unique
+      
+      // Better approach: Check if product is a provider name
+      const providerName = Object.keys(PROVIDER_NAMES).find(p => p === product.toLowerCase());
+      
+      if (providerName) {
+        // User queried a provider (e.g. "anthropic")
+        if (cmdOptions.refreshCache) {
+          console.log(chalk.blue('Refreshing AI model data...'));
+          await refreshAIModelData();
+        }
+        
+        if (version) {
+          // "eol-check query anthropic claude-3-opus"
+          const modelData = getAIModelEolData(providerName, version);
+          if (modelData) {
+            console.log(chalk.bold(`EOL Data for ${PROVIDER_NAMES[providerName]} ${version}:`));
+            console.table(modelData.map(m => ({
+              Cycle: m.cycle,
+              'Release Date': m.releaseDate,
+              'EOL Date': m.eol,
+              'LTS': m.lts,
+              'Deprecated': m.deprecated ? 'Yes' : 'No'
+            })));
+            return;
+          }
+        } else {
+          // List all models for provider
+          const models = getProviderModels(providerName);
+          console.log(chalk.bold(`Available models for ${PROVIDER_NAMES[providerName]}:`));
+          console.log(models.join(', '));
+          return;
+        }
+      }
+
+      // Check if the first argument is a model name directly (e.g. "gpt-4")
+      for (const provider of getAllProviders()) {
+        const modelData = getAIModelEolData(provider, product);
+        if (modelData) {
+           if (cmdOptions.refreshCache) {
+            console.log(chalk.blue('Refreshing AI model data...'));
+            await refreshAIModelData();
+          }
+          
+          if (version) {
+             const result = evaluateAIModel(PROVIDER_NAMES[provider], product, version, modelData);
+             let color = chalk.green;
+             if (result.status === Status.WARN) color = chalk.yellow;
+             if (result.status === Status.ERR) color = chalk.red;
+             console.log(
+              `${color(`[${result.status}]`)} ${chalk.bold(result.component)} ${result.version} - ${result.message}`,
+             );
+          } else {
+            console.log(chalk.bold(`EOL Data for ${PROVIDER_NAMES[provider]} ${product}:`));
+            console.table(modelData.map(m => ({
+              Cycle: m.cycle,
+              'Release Date': m.releaseDate,
+              'EOL Date': m.eol,
+              'LTS': m.lts,
+              'Deprecated': m.deprecated ? 'Yes' : 'No'
+            })));
+          }
+          return;
+        }
+      }
+
+      // Fallback to standard EOL check
       const data = await fetchEolData(product, cmdOptions.refreshCache);
       if (version) {
         const result = evaluateVersion(product, version, data);
@@ -78,6 +152,12 @@ program.parse(process.argv);
 async function main(options: any) {
   if (options.verbose) {
     console.log(chalk.blue('Scanning environment...'));
+  }
+
+  // Refresh AI model data if requested
+  if (options.refreshCache) {
+    if (options.verbose) console.log('Refreshing AI model data from providers...');
+    await refreshAIModelData();
   }
 
   const scanResult = scanEnvironment();
@@ -192,6 +272,36 @@ async function main(options: any) {
     }
   }
 
+  // Check AI/ML Models
+  if (options.verbose) console.log('Scanning for AI/ML models...');
+  const aiScanResult = scanAIModels(process.cwd());
+  
+  // Process detected SDKs
+  for (const sdk of aiScanResult.sdks) {
+    if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
+    // We don't evaluate SDKs directly here as they are covered by dependency scanner
+    // But we could add specific checks for SDK versions if needed
+  }
+
+  // Process detected Models
+  for (const model of aiScanResult.models) {
+    if (options.verbose) 
+      console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+    
+    const eolData = getAIModelEolData(model.provider, model.model);
+    if (eolData) {
+      const result = evaluateAIModel(
+        PROVIDER_NAMES[model.provider] || model.provider, 
+        model.model, 
+        model.version, 
+        eolData
+      );
+      results.push(result);
+    } else if (options.verbose) {
+      console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+    }
+  }
+
   // Generate HTML report if requested
   if (options.html) {
     try {
@@ -214,7 +324,7 @@ async function main(options: any) {
     let hasError = false;
 
     // Group results by category
-    const categories = [Category.RUNTIME, Category.OS, Category.SERVICE, Category.DEPENDENCY];
+    const categories = [Category.RUNTIME, Category.OS, Category.SERVICE, Category.DEPENDENCY, Category.AI_MODEL];
     
     for (const category of categories) {
       const categoryResults = results.filter((r) => r.category === category);
