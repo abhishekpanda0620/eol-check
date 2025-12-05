@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -33,7 +34,7 @@ jobs:
         id: publish
         continue-on-error: true
         run: |
-          npm publish 2>&1 | tee publish_output.txt
+          npm publish --provenance 2>&1 | tee publish_output.txt
           exit_code=${PIPESTATUS[0]}
           
           if [ $exit_code -eq 0 ]; then
