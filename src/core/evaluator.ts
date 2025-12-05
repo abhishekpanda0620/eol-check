@@ -20,6 +20,7 @@ export interface EvaluationResult {
   status: Status;
   message: string;
   category?: Category;
+  source?: string;
 }
 
 export function evaluateVersion(
@@ -48,6 +49,20 @@ export function evaluateVersion(
   if (!cycle) {
     const major = version.split('.')[0];
     cycle = eolData.find((c) => c.cycle === major);
+  }
+  
+  // 4. Try matching input version against EOL cycles that start with major (e.g. input "4" matches EOL "4.0")
+  if (!cycle) {
+    const major = version.split('.')[0];
+    // If input is major-only (e.g., "4"), try to find a cycle that starts with "4." or is exactly "4"
+    if (!version.includes('.')) {
+      cycle = eolData.find((c) => c.cycle === `${major}.0` || c.cycle.startsWith(`${major}.`));
+    }
+  }
+  
+  // 5. Try matching where EOL cycle is prefix of version (e.g. EOL "4" matches input "4.0.1")
+  if (!cycle) {
+    cycle = eolData.find((c) => version.startsWith(`${c.cycle}.`) || version === c.cycle);
   }
 
   if (!cycle) {
@@ -113,6 +128,7 @@ export function evaluateAIModel(
   model: string,
   version: string,
   eolData: AIModelCycle[],
+  source?: string,
 ): EvaluationResult {
   const component = `${provider}/${model}`;
   
@@ -137,6 +153,7 @@ export function evaluateAIModel(
       status: Status.WARN,
       message: `Model version ${version} not found in EOL data. Known versions: ${availableVersions}${eolData.length > 5 ? ', ...' : ''}`,
       category: Category.AI_MODEL,
+      source,
     };
   }
 
@@ -152,6 +169,7 @@ export function evaluateAIModel(
       status: Status.WARN,
       message: `Model is deprecated${cycle.replacement ? `. Use ${cycle.replacement} instead` : ''}${cycle.eol ? ` (EOL ${cycle.eol})` : ''}`,
       category: Category.AI_MODEL,
+      source,
     };
   }
 
@@ -162,6 +180,7 @@ export function evaluateAIModel(
       status: Status.ERR,
       message: `Model is EOL${cycle.replacement ? `. Upgrade to ${cycle.replacement}` : ''}`,
       category: Category.AI_MODEL,
+      source,
     };
   }
 
@@ -172,6 +191,7 @@ export function evaluateAIModel(
       status: Status.ERR,
       message: `Model is EOL (ended ${cycle.eol})${cycle.replacement ? `. Upgrade to ${cycle.replacement}` : ''}`,
       category: Category.AI_MODEL,
+      source,
     };
   }
 
@@ -187,6 +207,7 @@ export function evaluateAIModel(
         status: Status.WARN,
         message: `Model is approaching EOL (ends ${cycle.eol})`,
         category: Category.AI_MODEL,
+        source,
       };
     }
   }
@@ -197,5 +218,6 @@ export function evaluateAIModel(
     status: Status.OK,
     message: `Model is supported${cycle.lts ? ' (LTS)' : ''}${cycle.eol ? ` (ends ${cycle.eol})` : ''}`,
     category: Category.AI_MODEL,
+    source,
   };
 }

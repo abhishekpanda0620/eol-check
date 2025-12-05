@@ -14,7 +14,13 @@ import {
   AIModelCycle,
   stripHtmlTags,
   parseDate,
+  refreshAIModelData,
 } from './aiModels';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('AI Models Provider', () => {
   describe('Model Data Constants', () => {
@@ -497,6 +503,112 @@ describe('AI Models Provider', () => {
         const longString = 'A'.repeat(10000);
         // Should complete without throwing
         expect(() => parseDate(longString)).not.toThrow();
+      });
+    });
+  });
+
+  // Web Crawler Tests with Mocked HTTP
+  describe('Web Crawlers', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      // Suppress console output during tests
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('refreshAIModelData', () => {
+      it('should handle successful responses from both sources', async () => {
+        // Mock AWS Bedrock response
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table><tr><td>claude-3-opus</td><td>2024-01-01</td><td>No sooner than 12/31/2025</td></tr></table></html>',
+        });
+        // Mock Google AI response
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table><tr><td>gemini-1.5-pro</td><td>2024-05-24</td><td>Earliest January 2026</td></tr></table></html>',
+        });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+        expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+      });
+
+      it('should handle network errors gracefully', async () => {
+        mockedAxios.get.mockRejectedValue(new Error('Network error'));
+
+        // Should not throw, just log warnings
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle partial failures', async () => {
+        // First call succeeds
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table></table></html>',
+        });
+        // Second call fails
+        mockedAxios.get.mockRejectedValueOnce(new Error('Timeout'));
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle empty HTML responses', async () => {
+        mockedAxios.get.mockResolvedValue({ data: '' });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle malformed HTML', async () => {
+        mockedAxios.get.mockResolvedValue({
+          data: '<html><table><tr><td>incomplete',
+        });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should parse Claude model dates from AWS Bedrock', async () => {
+        const bedrockHtml = `
+          <html>
+            <table>
+              <tr>
+                <td>claude-3-5-sonnet</td>
+                <td>10/22/2024</td>
+                <td>No sooner than 10/22/2025</td>
+              </tr>
+            </table>
+          </html>
+        `;
+        mockedAxios.get.mockResolvedValueOnce({ data: bedrockHtml });
+        mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+        await refreshAIModelData();
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+          expect.stringContaining('aws.amazon.com'),
+          expect.any(Object)
+        );
+      });
+
+      it('should parse Gemini model dates from Google AI', async () => {
+        const googleHtml = `
+          <html>
+            <table>
+              <tr>
+                <td>gemini-2.0-flash</td>
+                <td>December 11, 2024</td>
+                <td>Earliest September 2025</td>
+              </tr>
+            </table>
+          </html>
+        `;
+        mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+        mockedAxios.get.mockResolvedValueOnce({ data: googleHtml });
+
+        await refreshAIModelData();
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+          expect.stringContaining('ai.google.dev'),
+          expect.any(Object)
+        );
       });
     });
   });

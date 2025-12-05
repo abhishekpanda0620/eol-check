@@ -16,12 +16,13 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.5.0')
+  .version('1.5.1')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
   .option('--verbose', 'Show verbose output')
   .option('--refresh-cache', 'Force refresh cache from API')
+  .option('--scan-ai', 'Scan for AI/ML model usage in code files')
   .action(async (cmdOptions) => {
     try {
       await main(cmdOptions);
@@ -307,33 +308,36 @@ async function main(options: any) {
     }
   }
 
-  // Check AI/ML Models
-  if (options.verbose) console.log('Scanning for AI/ML models...');
-  const aiScanResult = scanAIModels(process.cwd());
-  
-  // Process detected SDKs
-  for (const sdk of aiScanResult.sdks) {
-    if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
-    // We don't evaluate SDKs directly here as they are covered by dependency scanner
-    // But we could add specific checks for SDK versions if needed
-  }
-
-  // Process detected Models
-  for (const model of aiScanResult.models) {
-    if (options.verbose) 
-      console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+  // Check AI/ML Models (only if --scan-ai flag is provided)
+  if (options.scanAi) {
+    if (options.verbose) console.log('Scanning for AI/ML models...');
+    const aiScanResult = scanAIModels(process.cwd());
     
-    const eolData = getAIModelEolData(model.provider, model.model);
-    if (eolData) {
-      const result = evaluateAIModel(
-        PROVIDER_NAMES[model.provider] || model.provider, 
-        model.model, 
-        model.version, 
-        eolData
-      );
-      results.push(result);
-    } else if (options.verbose) {
-      console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+    // Process detected SDKs
+    for (const sdk of aiScanResult.sdks) {
+      if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
+      // We don't evaluate SDKs directly here as they are covered by dependency scanner
+      // But we could add specific checks for SDK versions if needed
+    }
+
+    // Process detected Models
+    for (const model of aiScanResult.models) {
+      if (options.verbose) 
+        console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+      
+      const eolData = getAIModelEolData(model.provider, model.model);
+      if (eolData) {
+        const result = evaluateAIModel(
+          PROVIDER_NAMES[model.provider] || model.provider, 
+          model.model, 
+          model.version, 
+          eolData,
+          model.source
+        );
+        results.push(result);
+      } else if (options.verbose) {
+        console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+      }
     }
   }
 
@@ -375,8 +379,9 @@ async function main(options: any) {
           hasError = true;
         }
 
+        const sourceInfo = res.source ? chalk.gray(` (in ${res.source})`) : '';
         console.log(
-          `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}`,
+          `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}${sourceInfo}`,
         );
       });
     }
