@@ -80,6 +80,7 @@ eol-check query postgresql 14
 - `--json`: Output results in JSON format (great for CI pipelines).
 - `--html <filename>`: Generate a beautiful HTML report with visualizations.
 - `--no-browser`: Don't automatically open HTML report in browser (v1.4.0+).
+- `--scan-ai`: Scan for AI/ML model usage in code files (v1.5.1+). Shows source file locations.
 - `--verbose`: Show detailed logs of what is being scanned.
 - `--refresh-cache`: Force refresh of cached EOL data.
 - `--help`: Show help information.
@@ -105,12 +106,43 @@ eol-check query postgresql 14
 ### Example Output
 
 ```text
-Scanning environment...
-
 EOL Check Results:
-[OK] Node.js v18.16.0 - Version 18 is supported (ends 2025-04-30)
+
+── Runtime Environment ──
+[OK] Node.js 18.16.0 - Version 18 is supported (ends 2025-04-30)
+
+── Operating System ──
 [WARN] Ubuntu 20.04 - Version 20 is approaching EOL (ends 2025-04-02)
+
+── System Services ──
+[OK] redis-server 7.4.1 - Version 7.4 is supported (ends 2026-11-30)
+[OK] psql 17.6 - Version 17 is supported (ends 2029-11-08)
+[ERR] go 1.18.1 - Version 1.18 is EOL (ended 2023-02-01)
+
+── Project Dependencies ──
+[OK] eslint 9.15.0 - Version 9 is supported (ends unknown)
 ```
+
+### AI Model Scanning (--scan-ai)
+
+Scan your codebase for AI/ML model usage:
+
+```bash
+eol-check --scan-ai
+```
+
+```text
+── AI/ML Models ──
+[WARN] OpenAI/gpt-4 latest - Model version latest not found... (in src/api/client.ts)
+[OK] OpenAI/gpt-4o latest - Model is supported (LTS) (in src/services/chat.ts)
+[OK] Anthropic/claude-sonnet-4 latest - Model is supported (LTS) (in config/models.json)
+[WARN] Google/gemini-2.0-flash latest - Model version latest not found... (in .env)
+```
+
+The scanner detects model usage in:
+- **Code files**: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`
+- **Config files**: `.json`, `.yaml`, `.yml`
+- **Environment files**: `.env`, `.env.local`, `.env.production`
 
 ## HTML Reports
 
@@ -140,9 +172,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: abhishekpanda0620/eol-check@v1.5.0
+      - uses: abhishekpanda0620/eol-check@v1.5.1
         with:
           generate-html: true
+          scan-ai: true  # Optional: Enable AI model scanning
 ```
 
 **See [GitHub Action Documentation](.github/ACTION-README.md) for:**

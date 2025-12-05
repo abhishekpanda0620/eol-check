@@ -16,12 +16,13 @@ const program = new Command();
 program
   .name('eol-check')
   .description('Check End of Life (EOL) status of your development environment and project dependencies')
-  .version('1.5.0')
+  .version('1.5.1')
   .option('--json', 'Output results as JSON')
   .option('--html <filename>', 'Generate HTML report to specified file')
   .option('--no-browser', 'Do not open HTML report in browser')
   .option('--verbose', 'Show verbose output')
   .option('--refresh-cache', 'Force refresh cache from API')
+  .option('--scan-ai', 'Scan for AI/ML model usage in code files')
   .action(async (cmdOptions) => {
     try {
       await main(cmdOptions);
@@ -133,15 +134,50 @@ program
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red('\n✗ Failed to fetch EOL data'));
-      console.error(chalk.yellow(`Product: ${chalk.bold(product)}`));
       
-      if (errorMsg.includes('404') || errorMsg.includes('Not Found')) {
-        console.error(chalk.gray(`\nThe product "${product}" was not found on endoflife.date.`));
-        console.error(chalk.gray('Please check the product name and try again.'));
-        console.error(chalk.gray(`\nSearch for available products at: ${chalk.cyan('https://endoflife.date/api/all.json')}`));
+      // Check if this looks like an AI model query
+      const aiModelPatterns = [
+        /^(gpt|claude|gemini|llama|mistral|codestral|pixtral|command|mixtral|dall-e|o1|o3)/i,
+        /^(openai|anthropic|google|meta|mistral|cohere)$/i,
+      ];
+      
+      const looksLikeAIModel = aiModelPatterns.some(p => p.test(product));
+      
+      if (looksLikeAIModel) {
+        console.error(chalk.red('\n✗ AI Model not found'));
+        console.error(chalk.yellow(`Model: ${chalk.bold(product)}`));
+        console.error(chalk.gray(`\nThe AI model "${product}" was not found in our database.`));
+        
+        // Suggest similar models
+        const allModels: string[] = [];
+        for (const provider of getAllProviders()) {
+          const models = getProviderModels(provider);
+          allModels.push(...models.map(m => `${provider}/${m}`));
+        }
+        
+        // Find similar models
+        const similar = allModels.filter(m => 
+          m.toLowerCase().includes(product.toLowerCase().split('-')[0]) ||
+          product.toLowerCase().includes(m.split('/')[1]?.split('-')[0] || '')
+        ).slice(0, 5);
+        
+        if (similar.length > 0) {
+          console.error(chalk.gray('\nDid you mean one of these?'));
+          similar.forEach(m => console.error(chalk.cyan(`  - eol-check query ${m.replace('/', ' ')}`)));
+        }
+        
+        console.error(chalk.gray('\nList all AI providers: ') + chalk.cyan('eol-check query openai | anthropic | google | meta | mistral | cohere'));
       } else {
-        console.error(chalk.gray(`\nError: ${errorMsg}`));
+        console.error(chalk.red('\n✗ Failed to fetch EOL data'));
+        console.error(chalk.yellow(`Product: ${chalk.bold(product)}`));
+        
+        if (errorMsg.includes('404') || errorMsg.includes('Not Found')) {
+          console.error(chalk.gray(`\nThe product "${product}" was not found on endoflife.date.`));
+          console.error(chalk.gray('Please check the product name and try again.'));
+          console.error(chalk.gray(`\nSearch for available products at: ${chalk.cyan('https://endoflife.date/api/all.json')}`));
+        } else {
+          console.error(chalk.gray(`\nError: ${errorMsg}`));
+        }
       }
     }
     process.exit(0);
@@ -272,33 +308,36 @@ async function main(options: any) {
     }
   }
 
-  // Check AI/ML Models
-  if (options.verbose) console.log('Scanning for AI/ML models...');
-  const aiScanResult = scanAIModels(process.cwd());
-  
-  // Process detected SDKs
-  for (const sdk of aiScanResult.sdks) {
-    if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
-    // We don't evaluate SDKs directly here as they are covered by dependency scanner
-    // But we could add specific checks for SDK versions if needed
-  }
-
-  // Process detected Models
-  for (const model of aiScanResult.models) {
-    if (options.verbose) 
-      console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+  // Check AI/ML Models (only if --scan-ai flag is provided)
+  if (options.scanAi) {
+    if (options.verbose) console.log('Scanning for AI/ML models...');
+    const aiScanResult = scanAIModels(process.cwd());
     
-    const eolData = getAIModelEolData(model.provider, model.model);
-    if (eolData) {
-      const result = evaluateAIModel(
-        PROVIDER_NAMES[model.provider] || model.provider, 
-        model.model, 
-        model.version, 
-        eolData
-      );
-      results.push(result);
-    } else if (options.verbose) {
-      console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+    // Process detected SDKs
+    for (const sdk of aiScanResult.sdks) {
+      if (options.verbose) console.log(`Found AI SDK: ${sdk.sdk} (${sdk.provider})`);
+      // We don't evaluate SDKs directly here as they are covered by dependency scanner
+      // But we could add specific checks for SDK versions if needed
+    }
+
+    // Process detected Models
+    for (const model of aiScanResult.models) {
+      if (options.verbose) 
+        console.log(`Checking AI Model: ${model.provider}/${model.model} (${model.version}) found in ${model.source}`);
+      
+      const eolData = getAIModelEolData(model.provider, model.model);
+      if (eolData) {
+        const result = evaluateAIModel(
+          PROVIDER_NAMES[model.provider] || model.provider, 
+          model.model, 
+          model.version, 
+          eolData,
+          model.source
+        );
+        results.push(result);
+      } else if (options.verbose) {
+        console.warn(chalk.yellow(`Warning: No EOL data found for ${model.provider}/${model.model}`));
+      }
     }
   }
 
@@ -340,8 +379,9 @@ async function main(options: any) {
           hasError = true;
         }
 
+        const sourceInfo = res.source ? chalk.gray(` (in ${res.source})`) : '';
         console.log(
-          `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}`,
+          `${color(`[${res.status}]`)} ${chalk.bold(res.component)} ${res.version} - ${res.message}${sourceInfo}`,
         );
       });
     }

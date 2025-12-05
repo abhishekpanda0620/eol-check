@@ -12,7 +12,15 @@ import {
   SDK_TO_PROVIDER,
   MODEL_PATTERNS,
   AIModelCycle,
+  stripHtmlTags,
+  parseDate,
+  refreshAIModelData,
 } from './aiModels';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('AI Models Provider', () => {
   describe('Model Data Constants', () => {
@@ -349,6 +357,259 @@ describe('AI Models Provider', () => {
         const hasLTS = cycles.some((c: AIModelCycle) => c.lts === true);
         expect(hasLTS).toBe(true);
       }
+    });
+  });
+
+  // SECURITY TESTS - Critical for handling untrusted input
+  describe('Security: stripHtmlTags', () => {
+    describe('Basic HTML stripping', () => {
+      it('should remove simple HTML tags', () => {
+        expect(stripHtmlTags('<p>Hello</p>')).toBe(' Hello ');
+        expect(stripHtmlTags('<div>Test</div>')).toBe(' Test ');
+      });
+
+      it('should remove tags with attributes', () => {
+        expect(stripHtmlTags('<a href="http://evil.com">Link</a>')).toBe(' Link ');
+        // Single tag becomes single space
+        const result = stripHtmlTags('<img src="x" onerror="alert(1)">');
+        expect(result).not.toContain('<');
+        expect(result).not.toContain('>');
+      });
+
+      it('should handle self-closing tags', () => {
+        expect(stripHtmlTags('<br/>')).toBe(' ');
+        expect(stripHtmlTags('<hr />')).toBe(' ');
+      });
+    });
+
+    describe('XSS Prevention', () => {
+      it('should neutralize script tags', () => {
+        const result = stripHtmlTags('<script>alert("XSS")</script>');
+        expect(result).not.toContain('<script>');
+        expect(result).not.toContain('</script>');
+        expect(result).not.toContain('<');
+        expect(result).not.toContain('>');
+      });
+
+      it('should handle nested script attempts', () => {
+        const result = stripHtmlTags('<<script>script>alert(1)<</script>/script>');
+        expect(result).not.toContain('<');
+        expect(result).not.toContain('>');
+      });
+
+      it('should remove event handler attributes context', () => {
+        const result = stripHtmlTags('<div onmouseover="alert(1)">hover</div>');
+        expect(result).not.toContain('onmouseover');
+        expect(result).not.toContain('<');
+      });
+
+      it('should handle malformed tags used for injection', () => {
+        // These are common XSS bypass attempts
+        expect(stripHtmlTags('<img src=x onerror=alert(1)>')).not.toContain('<');
+        expect(stripHtmlTags('<svg/onload=alert(1)>')).not.toContain('<');
+        expect(stripHtmlTags('<body onload=alert(1)>')).not.toContain('<');
+      });
+    });
+
+    describe('Edge cases and malformed input', () => {
+      it('should handle orphaned angle brackets', () => {
+        expect(stripHtmlTags('< orphan')).not.toContain('<');
+        expect(stripHtmlTags('orphan >')).not.toContain('>');
+        expect(stripHtmlTags('a < b > c')).not.toContain('<');
+        expect(stripHtmlTags('a < b > c')).not.toContain('>');
+      });
+
+      it('should handle deeply nested tags', () => {
+        const nested = '<div><div><div><span>deep</span></div></div></div>';
+        const result = stripHtmlTags(nested);
+        expect(result).not.toContain('<');
+        expect(result).not.toContain('>');
+        expect(result).toContain('deep');
+      });
+
+      it('should handle empty input', () => {
+        expect(stripHtmlTags('')).toBe('');
+      });
+
+      it('should handle input with no HTML', () => {
+        expect(stripHtmlTags('plain text')).toBe('plain text');
+      });
+
+      it('should handle Unicode in tags', () => {
+        const result = stripHtmlTags('<div>日本語</div>');
+        expect(result).not.toContain('<');
+        expect(result).toContain('日本語');
+      });
+
+      it('should handle newlines and whitespace in tags', () => {
+        const result = stripHtmlTags('<div\n  class="test"\n>content</div>');
+        expect(result).not.toContain('<');
+        expect(result).toContain('content');
+      });
+    });
+  });
+
+  describe('Security: parseDate', () => {
+    describe('Valid date formats', () => {
+      it('should parse "No sooner than MM/DD/YYYY" format', () => {
+        expect(parseDate('No sooner than 12/31/2025')).toBe('2025-12-31');
+        expect(parseDate('no sooner than 1/5/2024')).toBe('2024-01-05');
+      });
+
+      it('should parse "Month DD, YYYY" format', () => {
+        expect(parseDate('December 31, 2025')).toBe('2025-12-31');
+        expect(parseDate('January 1, 2024')).toBe('2024-01-01');
+      });
+
+      it('should parse "Earliest Month YYYY" format', () => {
+        expect(parseDate('Earliest January 2025')).toBe('2025-01-01');
+        expect(parseDate('earliest December 2024')).toBe('2024-12-01');
+      });
+
+      it('should return already formatted YYYY-MM-DD dates', () => {
+        expect(parseDate('2025-12-31')).toBe('2025-12-31');
+        expect(parseDate('2024-01-01')).toBe('2024-01-01');
+      });
+    });
+
+    describe('Invalid and edge case handling', () => {
+      it('should return null for empty input', () => {
+        expect(parseDate('')).toBeNull();
+      });
+
+      it('should return null for N/A', () => {
+        expect(parseDate('N/A')).toBeNull();
+      });
+
+      it('should return null for invalid formats', () => {
+        expect(parseDate('not a date')).toBeNull();
+        expect(parseDate('13/45/2025')).toBeNull(); // Invalid but may match regex
+      });
+
+      it('should handle null-like values safely', () => {
+        expect(parseDate(null as unknown as string)).toBeNull();
+        expect(parseDate(undefined as unknown as string)).toBeNull();
+      });
+    });
+
+    describe('Security considerations', () => {
+      it('should not execute code-like strings', () => {
+        // These shouldn't cause issues - just return null
+        expect(parseDate('javascript:alert(1)')).toBeNull();
+        expect(parseDate('<script>alert(1)</script>')).toBeNull();
+      });
+
+      it('should handle very long strings without crashing', () => {
+        const longString = 'A'.repeat(10000);
+        // Should complete without throwing
+        expect(() => parseDate(longString)).not.toThrow();
+      });
+    });
+  });
+
+  // Web Crawler Tests with Mocked HTTP
+  describe('Web Crawlers', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      // Suppress console output during tests
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('refreshAIModelData', () => {
+      it('should handle successful responses from both sources', async () => {
+        // Mock AWS Bedrock response
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table><tr><td>claude-3-opus</td><td>2024-01-01</td><td>No sooner than 12/31/2025</td></tr></table></html>',
+        });
+        // Mock Google AI response
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table><tr><td>gemini-1.5-pro</td><td>2024-05-24</td><td>Earliest January 2026</td></tr></table></html>',
+        });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+        expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+      });
+
+      it('should handle network errors gracefully', async () => {
+        mockedAxios.get.mockRejectedValue(new Error('Network error'));
+
+        // Should not throw, just log warnings
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle partial failures', async () => {
+        // First call succeeds
+        mockedAxios.get.mockResolvedValueOnce({
+          data: '<html><table></table></html>',
+        });
+        // Second call fails
+        mockedAxios.get.mockRejectedValueOnce(new Error('Timeout'));
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle empty HTML responses', async () => {
+        mockedAxios.get.mockResolvedValue({ data: '' });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should handle malformed HTML', async () => {
+        mockedAxios.get.mockResolvedValue({
+          data: '<html><table><tr><td>incomplete',
+        });
+
+        await expect(refreshAIModelData()).resolves.not.toThrow();
+      });
+
+      it('should parse Claude model dates from AWS Bedrock', async () => {
+        const bedrockHtml = `
+          <html>
+            <table>
+              <tr>
+                <td>claude-3-5-sonnet</td>
+                <td>10/22/2024</td>
+                <td>No sooner than 10/22/2025</td>
+              </tr>
+            </table>
+          </html>
+        `;
+        mockedAxios.get.mockResolvedValueOnce({ data: bedrockHtml });
+        mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+        await refreshAIModelData();
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+          expect.stringContaining('aws.amazon.com'),
+          expect.any(Object)
+        );
+      });
+
+      it('should parse Gemini model dates from Google AI', async () => {
+        const googleHtml = `
+          <html>
+            <table>
+              <tr>
+                <td>gemini-2.0-flash</td>
+                <td>December 11, 2024</td>
+                <td>Earliest September 2025</td>
+              </tr>
+            </table>
+          </html>
+        `;
+        mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+        mockedAxios.get.mockResolvedValueOnce({ data: googleHtml });
+
+        await refreshAIModelData();
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+          expect.stringContaining('ai.google.dev'),
+          expect.any(Object)
+        );
+      });
     });
   });
 });

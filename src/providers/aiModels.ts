@@ -401,8 +401,12 @@ export async function refreshAIModelData(): Promise<void> {
 /**
  * Safely strip HTML tags from a string
  * Uses iterative approach to handle nested/malformed tags and removes orphaned angle brackets
+ * 
+ * SECURITY: This function handles untrusted HTML input from external sources.
+ * It must prevent HTML injection by removing all tags and angle brackets.
+ * @exported for security testing
  */
-function stripHtmlTags(html: string): string {
+export function stripHtmlTags(html: string): string {
   let result = html;
   let previous = '';
   
@@ -420,8 +424,12 @@ function stripHtmlTags(html: string): string {
 
 /**
  * Parse date strings in various formats
+ * 
+ * SECURITY: Handles untrusted date strings from external sources.
+ * Returns null for invalid formats rather than throwing.
+ * @exported for security testing
  */
-function parseDate(dateStr: string): string | null {
+export function parseDate(dateStr: string): string | null {
   if (!dateStr || dateStr === 'N/A') return null;
   
   // Handle "No sooner than MM/DD/YYYY" format
